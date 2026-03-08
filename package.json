@@ -1,0 +1,30 @@
+{
+  "name": "parenting",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --loader ts-node/esm src/index.ts",
+    "dev": "ts-node-esm src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "@google/generative-ai": "^0.24.1",
+    "commander": "^14.0.3",
+    "dotenv": "^17.3.1",
+    "googleapis": "^171.4.0",
+    "playwright": "^1.58.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/commander": "^2.12.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^25.3.5",
+    "ts-node": "^10.9.2"
+  }
+}
