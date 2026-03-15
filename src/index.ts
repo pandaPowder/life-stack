@@ -4,7 +4,7 @@ import { GmailService } from './services/gmail.service.js';
 import { SwayService } from './services/sway.service.js';
 import { AIService } from './services/ai.service.js';
 
-async function main() {
+async function run() {
   program
     .option('-q, --query <string>', 'Gmail search query', 'sway')
     .option('-k, --key <string>', 'Google Gemini API Key')
@@ -58,20 +58,32 @@ async function main() {
     console.log('==========================================');
     
     console.log('\n📚 HOMEWORK SUPPORT:');
+    if (plan.homeworkSupport.length === 0) console.log('None found.');
     plan.homeworkSupport.forEach(t => console.log(`- [${t.child}] ${t.subject}: ${t.description} (Due: ${t.dueDate || 'N/A'})`));
 
     console.log('\n🛒 PURCHASES NEEDED:');
+    if (plan.purchasesNeeded.length === 0) console.log('None found.');
     plan.purchasesNeeded.forEach(p => console.log(`- [${p.priority.toUpperCase()}] ${p.item}: ${p.reason}`));
 
     console.log('\n🗓️ UPCOMING ACTIVITIES:');
+    if (plan.upcomingActivities.length === 0) console.log('None found.');
     plan.upcomingActivities.forEach(a => console.log(`- ${a.title} (${a.date}) @ ${a.location || 'School'}`));
 
     console.log('\n📢 ANNOUNCEMENTS:');
+    if (plan.announcements.length === 0) console.log('None found.');
     plan.announcements.forEach(ann => console.log(`- ${ann}`));
 
-  } catch (error) {
-    console.error('An error occurred during execution:', error);
+  } catch (error: any) {
+    console.error('\n!!! CRITICAL ERROR !!!');
+    if (error.response && error.response.data) {
+      console.error(JSON.stringify(error.response.data, null, 2));
+    } else if (error.stack) {
+      console.error(error.stack);
+    } else {
+      console.error(error);
+    }
+    process.exit(1);
   }
 }
 
-main();
+run();

@@ -34,30 +34,63 @@ export class GmailService {
 
   async authorize() {
     let client: any = await this.loadSavedCredentialsIfExist();
+    
+    const tryProfile = async (authClient: any) => {
+      const gmail = google.gmail({ version: 'v1', auth: authClient });
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      return profile.data.emailAddress;
+    };
+
     if (client) {
-      this.gmail = google.gmail({ version: 'v1', auth: client });
-      return;
+      try {
+        const email = await tryProfile(client);
+        this.gmail = google.gmail({ version: 'v1', auth: client });
+        console.log(`\n[AUTH SUCCESS] Authenticated as: ${email}`);
+        return;
+      } catch (err) {
+        console.log('Saved token is invalid or expired. Re-authenticating...');
+        try { await fs.unlink(this.TOKEN_PATH); } catch {}
+      }
     }
+
     client = await authenticate({
       scopes: this.SCOPES,
       keyfilePath: this.CREDENTIALS_PATH,
     });
+
     if (client && client.credentials) {
       await this.saveCredentials(client);
     }
+
     this.gmail = google.gmail({ version: 'v1', auth: client });
+    const email = await tryProfile(client);
+    console.log(`\n[AUTH SUCCESS] Authenticated as: ${email}`);
   }
 
   async fetchRecentSchoolEmails(query: string = 'sway') {
     if (!this.gmail) throw new Error('Gmail not authorized');
 
+    // Look back 14 days
+    const fourteenDaysAgo = Math.floor((Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000);
+    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${fourteenDaysAgo}`;
+    
     const res = await this.gmail.users.messages.list({
-      userId: 'me',
-      q: `${query} after:${Math.floor((Date.now() - 7 * 24 * 60 * 60 * 1000) / 1000)}`,
+      userId: "me",
+      q,
     });
 
     const messages = res.data.messages || [];
+    console.log(`\n[FETCH] Gmail found ${messages.length} message IDs for query "${q}".`);
     const emails = [];
+
+    const resolveLink = async (url: string): Promise<string> => {
+      try {
+        const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+        return response.url;
+      } catch (e) {
+        return url;
+      }
+    };
 
     for (const message of messages) {
       const msg = await this.gmail.users.messages.get({
@@ -70,7 +103,13 @@ export class GmailService {
       const from = msg.data.payload?.headers?.find(h => h.name === 'From')?.value || '';
       const date = new Date(parseInt(msg.data.internalDate!));
 
-      const swayLinks = this.extractSwayLinks(body);
+      const rawLinks = this.extractSwayLinks(body);
+      const swayLinks = await Promise.all(rawLinks.map(link => {
+        if (link.includes('sendgrid.net')) {
+          return resolveLink(link);
+        }
+        return Promise.resolve(link);
+      }));
 
       emails.push({
         id: message.id!,
@@ -86,23 +125,30 @@ export class GmailService {
   }
 
   private getEmailBody(message: gmail_v1.Schema$Message): string {
-    let body = '';
-    const parts = message.payload?.parts || [message.payload];
-    
-    for (const part of parts) {
-      if (part?.mimeType === 'text/plain' && part.body?.data) {
-        body += Buffer.from(part.body.data, 'base64').toString();
-      } else if (part?.mimeType === 'text/html' && part.body?.data) {
-        // We'll use text/plain for LLM simplicity, but could parse HTML too
-        body += Buffer.from(part.body.data, 'base64').toString();
+    const getPartContent = (part: any): string => {
+      let content = '';
+      if (part.parts) {
+        for (const subPart of part.parts) {
+          content += getPartContent(subPart);
+        }
       }
-    }
-    return body;
+      if (part.mimeType === 'text/plain' || part.mimeType === 'text/html') {
+        if (part.body && part.body.data) {
+          const raw = Buffer.from(part.body.data, 'base64').toString();
+          // If HTML, strip tags for LLM; if plain, use as is
+          content += (part.mimeType === 'text/html') ? raw.replace(/<[^>]*>?/gm, ' ') : raw;
+        }
+      }
+      return content;
+    };
+
+    return getPartContent(message.payload || {});
   }
 
   private extractSwayLinks(text: string): string[] {
-    const swayRegex = /https:\/\/sway\.cloud\.microsoft\/[a-zA-Z0-9]+/g;
+    const swayRegex = /https:\/\/(sway\.cloud\.microsoft|sway\.office\.com|app\.smore\.com|u\d+\.ct\.sendgrid\.net)\/[a-zA-Z0-9/\-_]+/g;
     const matches = text.match(swayRegex);
-    return matches ? [...new Set(matches)] : [];
+    if (!matches) return [];
+    return [...new Set(matches.map(url => url.replace(/\/embed$/, '')))];
   }
 }
