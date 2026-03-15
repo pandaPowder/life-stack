@@ -7,27 +7,30 @@ Automatically ingest school emails, scrape text from linked Microsoft Sway newsl
 
 ## 🏗️ Architecture & Decisions
 
-### 1. Gmail Ingestion (`src/services/gmail.service.ts`)
+### 1. Unified Authentication (`src/services/auth.service.ts`)
 *   **Tool:** `googleapis` + `@google-cloud/local-auth`.
-*   **Rationale:** Standard OAuth2 flow for secure, programmatic access to the user's inbox.
-*   **Strategy:** Queries for "sway" or specific school senders within the last 7 days.
+*   **Rationale:** Centralized OAuth2 flow for Gmail, Drive, and Docs access.
 
-### 2. Sway Scraping (`src/services/sway.service.ts`)
-*   **Tool:** `Playwright` (Chromium).
-*   **Rationale:** Microsoft Sways are Client-Side Rendered (CSR) applications. Simple HTML parsing (like Cheerio) fails to capture content. Playwright renders the JavaScript and extracts the full text.
-*   **Wait Strategy:** Uses `networkidle` and waits for specific theme-font selectors to ensure the "infinite scroll" or dynamic content has loaded.
+### 2. Context Ingestion (`src/services/drive.service.ts`)
+*   **Tool:** `google.drive` + `google.docs`.
+*   **Rationale:** Fetches "Living Context" for the kids (interests, grades, schedules) from a Google Drive folder called **"AI Context"**. This allows the AI to prioritize school news accurately for each child.
 
-### 3. AI Synthesis (`src/services/ai.service.ts`)
-*   **Model:** `gemini-2.0-flash`.
-*   **Rationale:** Fast, high-context window, and supports structured JSON output natively (`responseMimeType: 'application/json'`).
-*   **Schema:** Defined in `src/types/index.ts` to ensure consistent parenting plans.
+### 3. Gmail & Scraping (`src/services/gmail.service.ts`, `src/services/sway.service.ts`)
+*   **Gmail:** Queries for school communications and newsletter links (including Smore and Sway).
+*   **Link Resolution**: Automatically resolves SendGrid tracking links to find the canonical newsletter URL.
+*   **Playwright:** Renders JavaScript-heavy Sways and Smores to extract full text content.
+
+### 4. AI Synthesis (`src/services/ai.service.ts`)
+*   **Model:** `gemini-2.5-flash`.
+*   **Contextual Prompting**: Injects the Drive context directly into the synthesis prompt, ensuring that Graham's band news, Nora's theater updates, and Ansel's elementary news are correctly assigned and prioritized.
 
 ## 🔄 Workflow
-1.  **Authorize:** Gmail OAuth handshake (uses `token.json` if present).
-2.  **Fetch:** Search Gmail for relevant school emails.
-3.  **Scrape:** If Sway links are found, launch Playwright to extract content.
-4.  **Process:** Send consolidated text to Gemini with a specialized parenting prompt.
-5.  **Output:** Display a structured plan in the CLI.
+1.  **Authorize:** Unified Google OAuth handshake.
+2.  **Context**: Fetch "AI Context" from the designated Drive folder.
+3.  **Fetch**: Search Gmail for school-related messages.
+4.  **Resolve & Scrape**: Extract text from newsletters and SendGrid links.
+5.  **Process**: Synthesize with Gemini 2.5 using both email content and Drive-based personal context.
+6.  **Output**: Display a structured, child-specific parenting plan.
 
 ## 🛠️ Development Notes
 *   **ES Modules:** The project uses `"type": "module"` in `package.json`.

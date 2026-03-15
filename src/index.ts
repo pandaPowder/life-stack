@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { program } from 'commander';
+import { AuthService } from './services/auth.service.js';
 import { GmailService } from './services/gmail.service.js';
+import { DriveService } from './services/drive.service.js';
 import { SwayService } from './services/sway.service.js';
 import { AIService } from './services/ai.service.js';
 
@@ -18,13 +20,21 @@ async function run() {
     process.exit(1);
   }
 
-  const gmail = new GmailService();
+  const auth = new AuthService();
   const sway = new SwayService();
   const ai = new AIService(apiKey);
 
   try {
-    console.log('--- Step 1: Authorizing Gmail ---');
-    await gmail.authorize();
+    console.log('--- Step 1: Authorizing with Google ---');
+    await auth.authorize();
+
+    const gmail = new GmailService(auth.auth);
+    const drive = new DriveService(auth.auth);
+
+    console.log('--- Step 2: Fetching AI Context from Drive ---');
+    const context = await drive.getAIContextFolderContent('AI Context');
+
+    console.log(`--- Step 3: Fetching emails (query: "${options.query}") ---`);
 
     console.log(`--- Step 2: Fetching emails (query: "${options.query}") ---`);
     const emails = await gmail.fetchRecentSchoolEmails(options.query);
@@ -50,8 +60,8 @@ async function run() {
       return;
     }
 
-    console.log('\n--- Step 3: Generating Parenting Plan ---');
-    const plan = await ai.generateParentingPlan(consolidatedText);
+    console.log('\n--- Step 4: Generating Parenting Plan with Drive Context ---');
+    const plan = await ai.generateParentingPlan(consolidatedText, context);
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');

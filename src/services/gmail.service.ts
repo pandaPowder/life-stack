@@ -1,70 +1,10 @@
 import { google, gmail_v1 } from 'googleapis';
-import fs from 'fs/promises';
-import path from 'path';
-import { authenticate } from '@google-cloud/local-auth';
 
 export class GmailService {
-  private SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
-  private TOKEN_PATH = path.join(process.cwd(), 'token.json');
-  private CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
-  private gmail: gmail_v1.Gmail | null = null;
+  private gmail: gmail_v1.Gmail;
 
-  private async loadSavedCredentialsIfExist() {
-    try {
-      const content = await fs.readFile(this.TOKEN_PATH, 'utf-8');
-      const credentials = JSON.parse(content);
-      return google.auth.fromJSON(credentials);
-    } catch (err) {
-      return null;
-    }
-  }
-
-  private async saveCredentials(client: any) {
-    const content = await fs.readFile(this.CREDENTIALS_PATH, 'utf-8');
-    const keys = JSON.parse(content);
-    const key = keys.installed || keys.web;
-    const payload = JSON.stringify({
-      type: 'authorized_user',
-      client_id: key.client_id,
-      client_secret: key.client_secret,
-      refresh_token: client.credentials.refresh_token,
-    });
-    await fs.writeFile(this.TOKEN_PATH, payload);
-  }
-
-  async authorize() {
-    let client: any = await this.loadSavedCredentialsIfExist();
-    
-    const tryProfile = async (authClient: any) => {
-      const gmail = google.gmail({ version: 'v1', auth: authClient });
-      const profile = await gmail.users.getProfile({ userId: 'me' });
-      return profile.data.emailAddress;
-    };
-
-    if (client) {
-      try {
-        const email = await tryProfile(client);
-        this.gmail = google.gmail({ version: 'v1', auth: client });
-        console.log(`\n[AUTH SUCCESS] Authenticated as: ${email}`);
-        return;
-      } catch (err) {
-        console.log('Saved token is invalid or expired. Re-authenticating...');
-        try { await fs.unlink(this.TOKEN_PATH); } catch {}
-      }
-    }
-
-    client = await authenticate({
-      scopes: this.SCOPES,
-      keyfilePath: this.CREDENTIALS_PATH,
-    });
-
-    if (client && client.credentials) {
-      await this.saveCredentials(client);
-    }
-
-    this.gmail = google.gmail({ version: 'v1', auth: client });
-    const email = await tryProfile(client);
-    console.log(`\n[AUTH SUCCESS] Authenticated as: ${email}`);
+  constructor(auth: any) {
+    this.gmail = google.gmail({ version: 'v1', auth });
   }
 
   async fetchRecentSchoolEmails(query: string = 'sway') {

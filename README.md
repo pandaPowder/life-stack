@@ -39,8 +39,14 @@ You can change the Gmail search query using the `-q` flag:
 npm start -- -q "from:teacher@school.edu"
 ```
 
+### 🧠 Personalized Context
+This tool integrates with your Google Drive. To provide personalized context for each child:
+1.  Create a folder in Google Drive named **"AI Context"**.
+2.  Add Google Docs describing your children (e.g., "About Graham", "Ansel's Interests").
+3.  The AI will automatically pull this text and use it to better assign homework tasks, prioritize extracurricular activities (like Band or Theater), and filter out irrelevant school noise.
+
 ## 🏗️ Tech Stack
 *   **TypeScript/Node.js**
 *   **Playwright:** For scraping Microsoft Sway (JavaScript-heavy).
-*   **Google Gemini (gemini-2.0-flash):** For intelligent summarization and JSON extraction.
+*   **Google Gemini (gemini-2.5-flash):** For stable, high-performance summarization and JSON extraction in 2026.
 *   **Google APIs:** For Gmail access.

@@ -18,10 +18,15 @@ export class AIService {
   /**
    * Summarizes the raw school email text and Sway content.
    */
-  async generateParentingPlan(rawText: string): Promise<ParentingPlan> {
+  async generateParentingPlan(rawText: string, context: string = ''): Promise<ParentingPlan> {
     const prompt = `
       You are an expert parenting assistant. Below is text extracted from school emails and newsletters (including Sways).
-      Analyze the text and extract all important information for a 10-year-old child's weekly parenting plan.
+      Analyze the text and extract all important information for my children's weekly parenting plan.
+      
+      PERSONAL CONTEXT (Use this to prioritize and assign tasks):
+      ---
+      ${context}
+      ---
       
       Specifically, look for:
       - Support needed with homework (specific assignments, subjects).
