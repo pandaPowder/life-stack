@@ -20,7 +20,7 @@ export class AIService {
    */
   async generateParentingPlan(rawText: string, context: string = ''): Promise<ParentingPlan> {
     const prompt = `
-      You are an expert parenting assistant. Below is text extracted from school emails and newsletters (including Sways).
+      You are an expert parenting assistant. Below is text extracted from school emails, newsletters (including Sways), and WhatsApp chat history between parents.
       Analyze the text and extract all important information for my children's weekly parenting plan.
       
       PERSONAL CONTEXT (Use this to prioritize and assign tasks):
@@ -33,6 +33,7 @@ export class AIService {
       - Items that need to be purchased (supplies, clothes, special equipment).
       - Upcoming school activities, deadlines, or events.
       - General important school announcements or reminders.
+      - Logistics, schedule changes, or requests discussed in WhatsApp messages.
       
       Return the data in the following JSON structure:
       {
@@ -42,7 +43,7 @@ export class AIService {
         "announcements": [string]
       }
       
-      School Content:
+      Raw Content (Emails, Sways, WhatsApp):
       ---
       ${rawText}
       ---

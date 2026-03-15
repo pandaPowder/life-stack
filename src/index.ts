@@ -5,11 +5,13 @@ import { GmailService } from './services/gmail.service.js';
 import { DriveService } from './services/drive.service.js';
 import { SwayService } from './services/sway.service.js';
 import { AIService } from './services/ai.service.js';
+import { BeeperService } from './services/beeper.service.js';
 
 async function run() {
   program
     .option('-q, --query <string>', 'Gmail search query', 'sway')
     .option('-k, --key <string>', 'Google Gemini API Key')
+    .option('-d, --days <number>', 'Number of days for WhatsApp history', '7')
     .parse(process.argv);
 
   const options = program.opts();
@@ -23,6 +25,7 @@ async function run() {
   const auth = new AuthService();
   const sway = new SwayService();
   const ai = new AIService(apiKey);
+  const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
 
   try {
     console.log('--- Step 1: Authorizing with Google ---');
@@ -35,8 +38,6 @@ async function run() {
     const context = await drive.getAIContextFolderContent('AI Context');
 
     console.log(`--- Step 3: Fetching emails (query: "${options.query}") ---`);
-
-    console.log(`--- Step 2: Fetching emails (query: "${options.query}") ---`);
     const emails = await gmail.fetchRecentSchoolEmails(options.query);
     console.log(`Found ${emails.length} emails.`);
 
@@ -55,12 +56,29 @@ async function run() {
       }
     }
 
+    // Step 4: WhatsApp context via Beeper
+    const chatNamesStr = process.env.BEEPER_CHAT_NAMES || '';
+    if (chatNamesStr) {
+      const chatNames = chatNamesStr.split(',').map(n => n.trim());
+      console.log(`\n--- Step 4: Fetching WhatsApp context for: ${chatNames.join(', ')} ---`);
+      
+      const chatIDs = await beeper.findChatIDs(chatNames);
+      if (chatIDs.length > 0) {
+        const messages = await beeper.getRecentMessages(chatIDs, parseInt(options.days));
+        const beeperContext = beeper.formatMessagesForAI(messages);
+        consolidatedText += beeperContext;
+        console.log(`Fetched ${messages.length} messages from WhatsApp.`);
+      } else {
+        console.warn('No matching WhatsApp chats found in Beeper.');
+      }
+    }
+
     if (!consolidatedText) {
       console.log('No emails or content found to summarize.');
       return;
     }
 
-    console.log('\n--- Step 4: Generating Parenting Plan with Drive Context ---');
+    console.log('\n--- Step 5: Generating Parenting Plan with Drive & WhatsApp Context ---');
     const plan = await ai.generateParentingPlan(consolidatedText, context);
 
     console.log('\n==========================================');
