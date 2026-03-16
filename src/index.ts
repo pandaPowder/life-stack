@@ -5,13 +5,12 @@ import { GmailService } from './services/gmail.service.js';
 import { DriveService } from './services/drive.service.js';
 import { SwayService } from './services/sway.service.js';
 import { AIService } from './services/ai.service.js';
-import { BeeperService } from './services/beeper.service.js';
+import { McpService } from './services/mcp.service.js';
 
 async function run() {
   program
     .option('-q, --query <string>', 'Gmail search query', 'sway')
     .option('-k, --key <string>', 'Google Gemini API Key')
-    .option('-d, --days <number>', 'Number of days for WhatsApp history', '7')
     .parse(process.argv);
 
   const options = program.opts();
@@ -25,7 +24,7 @@ async function run() {
   const auth = new AuthService();
   const sway = new SwayService();
   const ai = new AIService(apiKey);
-  const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
+  const mcp = new McpService(process.env.BEEPER_ACCESS_TOKEN);
 
   try {
     console.log('--- Step 1: Authorizing with Google ---');
@@ -41,45 +40,31 @@ async function run() {
     const emails = await gmail.fetchRecentSchoolEmails(options.query);
     console.log(`Found ${emails.length} emails.`);
 
-    let consolidatedText = '';
+    let consolidatedSchoolText = '';
 
     for (const email of emails) {
       console.log(`\nProcessing Email: ${email.subject}`);
-      consolidatedText += `Subject: ${email.subject}\nFrom: ${email.sender}\nBody: ${email.body}\n`;
+      consolidatedSchoolText += `Subject: ${email.subject}\nFrom: ${email.sender}\nBody: ${email.body}\n`;
 
       if (email.swayLinks.length > 0) {
         for (const link of email.swayLinks) {
           console.log(`Scraping Sway: ${link}`);
           const swayContent = await sway.scrapeSway(link);
-          consolidatedText += `\n[Sway Content from ${link}]:\n${swayContent}\n`;
+          consolidatedSchoolText += `\n[Sway Content from ${link}]:\n${swayContent}\n`;
         }
       }
     }
 
-    // Step 4: WhatsApp context via Beeper
-    const chatNamesStr = process.env.BEEPER_CHAT_NAMES || '';
-    if (chatNamesStr) {
-      const chatNames = chatNamesStr.split(',').map(n => n.trim());
-      console.log(`\n--- Step 4: Fetching WhatsApp context for: ${chatNames.join(', ')} ---`);
-      
-      const chatIDs = await beeper.findChatIDs(chatNames);
-      if (chatIDs.length > 0) {
-        const messages = await beeper.getRecentMessages(chatIDs, parseInt(options.days));
-        const beeperContext = beeper.formatMessagesForAI(messages);
-        consolidatedText += beeperContext;
-        console.log(`Fetched ${messages.length} messages from WhatsApp.`);
-      } else {
-        console.warn('No matching WhatsApp chats found in Beeper.');
-      }
+    if (!consolidatedSchoolText) {
+      console.log('No school emails found to summarize.');
     }
 
-    if (!consolidatedText) {
-      console.log('No emails or content found to summarize.');
-      return;
-    }
+    // Connect to Beeper MCP
+    console.log('\n--- Step 4: Initializing Beeper MCP ---');
+    await mcp.connect();
 
-    console.log('\n--- Step 5: Generating Parenting Plan with Drive & WhatsApp Context ---');
-    const plan = await ai.generateParentingPlan(consolidatedText, context);
+    console.log('\n--- Step 5: Generating Parenting Plan with Agentic Context ---');
+    const plan = await ai.generateParentingPlan(consolidatedSchoolText, context, mcp);
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');
