@@ -5,6 +5,7 @@ export interface BeeperMessage {
   text: string;
   timestamp: string;
   chatName: string;
+  chatID: string;
   isFromMe: boolean;
 }
 
@@ -101,6 +102,7 @@ export class BeeperService {
             text: m.text || '',
             timestamp: m.timestamp,
             chatName,
+            chatID,
             isFromMe: !!m.isSender,
           });
         });

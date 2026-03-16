@@ -11,7 +11,7 @@ export interface ParentingPlan {
   homeworkSupport: SupportTask[];
   purchasesNeeded: PurchaseTask[];
   upcomingActivities: Activity[];
-  announcements: string[];
+  announcements: Announcement[];
 }
 
 export interface SupportTask {
@@ -19,12 +19,14 @@ export interface SupportTask {
   subject: string;
   description: string;
   dueDate?: string;
+  sources?: string[]; // Subject or chat name
 }
 
 export interface PurchaseTask {
   item: string;
   reason: string;
   priority: 'high' | 'medium' | 'low';
+  sources?: string[];
 }
 
 export interface Activity {
@@ -32,4 +34,10 @@ export interface Activity {
   date: string;
   location?: string;
   requirements?: string[];
+  sources?: string[];
+}
+
+export interface Announcement {
+  text: string;
+  sources?: string[];
 }

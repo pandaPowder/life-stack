@@ -6,6 +6,54 @@ import { DriveService } from './services/drive.service.js';
 import { SwayService } from './services/sway.service.js';
 import { AIService } from './services/ai.service.js';
 import { BeeperService } from './services/beeper.service.js';
+import * as fs from 'fs/promises';
+
+interface SourceLink {
+  title: string;
+  url?: string;
+  type: 'gmail' | 'whatsapp' | 'sway';
+}
+
+async function writePlanToMarkdown(plan: any, sourceMap: Map<string, SourceLink>) {
+  const getCitations = (sources?: string[]) => {
+    if (!sources || sources.length === 0) return '';
+    const links = sources.map(s => {
+      // Try exact match, then try removing "WhatsApp Chat History" prefix if AI added it
+      const cleanSource = s.replace(/^WhatsApp Chat History \((.*)\)$/, '$1').trim();
+      const link = sourceMap.get(s) || sourceMap.get(cleanSource);
+      
+      if (link && link.url) {
+        return `[[src](${link.url})]`;
+      }
+      return `[${s}]`;
+    });
+    return ` ${links.join(' ')}`;
+  };
+
+  let output = `
+# WEEKLY PARENTING PLAN
+*Generated on ${new Date().toLocaleDateString()}*
+
+## 📚 HOMEWORK SUPPORT
+${plan.homeworkSupport.length === 0 ? 'None found.' : plan.homeworkSupport.map((t: any) => `- [${t.child}] **${t.subject}**: ${t.description} (Due: ${t.dueDate || 'N/A'})${getCitations(t.sources)}`).join('\n')}
+
+## 🛒 PURCHASES NEEDED
+${plan.purchasesNeeded.length === 0 ? 'None found.' : plan.purchasesNeeded.map((p: any) => `- [${p.priority.toUpperCase()}] **${p.item}**: ${p.reason}${getCitations(p.sources)}`).join('\n')}
+
+## 🗓️ UPCOMING ACTIVITIES
+${plan.upcomingActivities.length === 0 ? 'None found.' : plan.upcomingActivities.map((a: any) => `- **${a.title}** (${a.date}) @ ${a.location || 'School'}${a.requirements?.length ? `\\n  *Requirements: ${a.requirements.join(', ')}*` : ''}${getCitations(a.sources)}`).join('\n')}
+
+## 📢 ANNOUNCEMENTS
+${plan.announcements.length === 0 ? 'None found.' : plan.announcements.map((ann: any) => `- ${ann.text}${getCitations(ann.sources)}`).join('\n')}
+
+---
+## 🔍 SOURCES
+${Array.from(sourceMap.values()).map(s => `- [${s.type.toUpperCase()}] ${s.url ? `[${s.title}](${s.url})` : s.title}`).join('\n')}
+`;
+
+  await fs.writeFile('weekly-parenting-plan.md', output.trim());
+  console.log('\n[SUCCESS] Plan written to weekly-parenting-plan.md');
+}
 
 async function run() {
   program
@@ -27,6 +75,7 @@ async function run() {
   const sway = new SwayService();
   const ai = new AIService(apiKey);
   const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
+  const sourceMap = new Map<string, SourceLink>();
 
   try {
     console.log('--- Step 1: Authorizing with Google ---');
@@ -48,12 +97,20 @@ async function run() {
       for (const email of emails) {
         console.log(`\nProcessing Email: ${email.subject}`);
         consolidatedText += `Subject: ${email.subject}\nFrom: ${email.sender}\nBody: ${email.body}\n`;
+        
+        sourceMap.set(email.subject, {
+          title: email.subject,
+          url: `https://mail.google.com/mail/u/0/#inbox/${email.id}`,
+          type: 'gmail'
+        });
 
         if (email.swayLinks.length > 0) {
           for (const link of email.swayLinks) {
             console.log(`Scraping Sway: ${link}`);
             const swayContent = await sway.scrapeSway(link);
             consolidatedText += `\n[Sway Content from ${link}]:\n${swayContent}\n`;
+            // We'll map the sway link itself too if it appears as a source
+            sourceMap.set(link, { title: `Sway: ${email.subject}`, url: link, type: 'sway' });
           }
         }
       }
@@ -73,6 +130,17 @@ async function run() {
         const beeperContext = beeper.formatMessagesForAI(messages);
         consolidatedText += beeperContext;
         console.log(`Fetched ${messages.length} messages from WhatsApp.`);
+        
+        // Add unique chat names to source map
+        const foundChatNames = new Set(messages.map(m => m.chatName));
+        foundChatNames.forEach(name => {
+          const chatID = messages.find(m => m.chatName === name)?.chatID;
+          sourceMap.set(name, { 
+            title: `WhatsApp: ${name}`, 
+            url: chatID ? `beeper://chat/${chatID}` : undefined,
+            type: 'whatsapp' 
+          });
+        });
       } else {
         console.warn('No matching WhatsApp chats found in Beeper.');
       }
@@ -85,6 +153,8 @@ async function run() {
 
     console.log('\n--- Step 5: Generating Parenting Plan with Unified Context ---');
     const plan = await ai.generateParentingPlan(consolidatedText, context);
+
+    await writePlanToMarkdown(plan, sourceMap);
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');
@@ -104,7 +174,7 @@ async function run() {
 
     console.log('\n📢 ANNOUNCEMENTS:');
     if (plan.announcements.length === 0) console.log('None found.');
-    plan.announcements.forEach(ann => console.log(`- ${ann}`));
+    plan.announcements.forEach(ann => console.log(`- ${ann.text}`));
 
   } catch (error: any) {
     console.error('\n!!! CRITICAL ERROR !!!');

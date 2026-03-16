@@ -42,12 +42,15 @@ export class AIService {
       - General important school announcements or reminders.
       - Logistical changes, parent agreements, or requests from the WhatsApp history.
       
+      CITATIONS:
+      For every item you find, include a "sources" array containing the exact email subjects or WhatsApp chat names where the information was found.
+      
       Return the data in the following JSON structure:
       {
-        "homeworkSupport": [{ "child": string, "subject": string, "description": string, "dueDate": string }],
-        "purchasesNeeded": [{ "item": string, "reason": string, "priority": "high" | "medium" | "low" }],
-        "upcomingActivities": [{ "title": string, "date": string, "location": string, "requirements": string[] }],
-        "announcements": [string]
+        "homeworkSupport": [{ "child": string, "subject": string, "description": string, "dueDate": string, "sources": string[] }],
+        "purchasesNeeded": [{ "item": string, "reason": string, "priority": "high" | "medium" | "low", "sources": string[] }],
+        "upcomingActivities": [{ "title": string, "date": string, "location": string, "requirements": string[], "sources": string[] }],
+        "announcements": [{ "text": string, "sources": string[] }]
       }
       
       RAW CONTENT (School Communications & WhatsApp):
@@ -58,6 +61,8 @@ export class AIService {
 
     const result = await this.model.generateContent(prompt);
     const response = await result.response;
-    return JSON.parse(response.text());
+    const plan = JSON.parse(response.text());
+    console.log(`[AI] Generated plan with ${plan.homeworkSupport.length + plan.purchasesNeeded.length + plan.upcomingActivities.length + plan.announcements.length} items.`);
+    return plan;
   }
 }
