@@ -5,6 +5,7 @@ export interface BeeperMessage {
   text: string;
   timestamp: string;
   chatName: string;
+  isFromMe: boolean;
 }
 
 export class BeeperService {
@@ -78,10 +79,7 @@ export class BeeperService {
         });
         const msgData = await msgRes.json();
         
-        // Find the chat name from the first message if possible or a separate call
-        // To be safe and avoid extra calls, we'll just use the ID if we can't find title easily
-        // But since we just found IDs by title, we could pass titles along. 
-        // For now, let's just get the chat title from the API.
+        // Find the chat name
         const chatRes = await fetch(`${this.baseUrl}/chats/${chatID}`, {
           headers: { "Authorization": `Bearer ${this.token}` }
         });
@@ -90,6 +88,11 @@ export class BeeperService {
 
         const recent = (msgData.items || []).filter((m: any) => new Date(m.timestamp) > afterDate);
         
+        if (recent.length === 0) {
+          console.log(`[BEEPER] Skipping stale chat: "${chatName}" (no activity in ${days} days).`);
+          continue;
+        }
+
         console.log(`[BEEPER] Found ${recent.length} recent messages in "${chatName}".`);
 
         recent.forEach((m: any) => {
@@ -98,6 +101,7 @@ export class BeeperService {
             text: m.text || '',
             timestamp: m.timestamp,
             chatName,
+            isFromMe: !!m.isSender,
           });
         });
       }
@@ -117,7 +121,8 @@ export class BeeperService {
 
     let output = '\n--- WhatsApp Chat History (Last 7 Days) ---\n';
     messages.forEach(m => {
-      output += `[${m.chatName}] ${m.senderName} (${new Date(m.timestamp).toLocaleString()}): ${m.text}\n`;
+      const senderLabel = m.isFromMe ? `ME (Dallas)` : m.senderName;
+      output += `[${m.chatName}] ${senderLabel} (${new Date(m.timestamp).toLocaleString()}): ${m.text}\n`;
     });
     output += '--- End of WhatsApp History ---\n';
     

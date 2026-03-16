@@ -23,6 +23,13 @@ export class AIService {
       You are an expert parenting assistant. Below is text extracted from school emails, newsletters, and WhatsApp chat history between parents.
       Analyze the text and extract all important information for my children's weekly parenting plan.
       
+      IMPORTANT RECIPIENT CONTEXT:
+      - This report is for ME (Dallas). 
+      - In the WhatsApp logs, messages from "ME (Dallas)" are requests or info I have already sent.
+      - DO NOT list requests I made to others as "Homework Support" or "Purchases Needed" for myself.
+      - DO focus on requests or info sent TO me by my co-parent (Jenny) or my kids.
+      - Use my own messages ("ME (Dallas)") only as context to understand agreements or confirmed plans.
+      
       PERSONAL CONTEXT (Use this to prioritize and assign tasks):
       ---
       ${context}
