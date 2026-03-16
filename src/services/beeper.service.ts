@@ -23,35 +23,38 @@ export class BeeperService {
     const chatIDs: string[] = [];
     
     try {
-      // Fetch all chats (might need pagination if user has 100s of chats)
-      const res = await fetch(`${this.baseUrl}/chats?limit=100`, {
-        headers: { "Authorization": `Bearer ${this.token}` }
-      });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`HTTP ${res.status}: ${errorText}`);
-      }
-      
-      const data = await res.json();
-      const allChats = data.items || [];
-
       for (const targetName of names) {
-        // Use a more flexible match (some names might have kids' names separated by slashes etc)
-        const chat = allChats.find((c: any) => 
-          c.title.toLowerCase() === targetName.toLowerCase() ||
-          c.title.toLowerCase().includes(targetName.toLowerCase())
-        );
+        // Use the generic search endpoint which works for chats and messages
+        const res = await fetch(`${this.baseUrl}/search?query=${encodeURIComponent(targetName)}`, {
+          headers: { "Authorization": `Bearer ${this.token}` }
+        });
         
-        if (chat) {
-          console.log(`[BEEPER] Found chat: ${chat.title} (${chat.id})`);
-          chatIDs.push(chat.id);
+        if (!res.ok) {
+          console.warn(`[BEEPER] Search failed for "${targetName}": ${res.status}`);
+          continue;
+        }
+        
+        const data = await res.json();
+        const foundChats = data.results?.chats || [];
+
+        // Normalize for better matching
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+        const normalizedTarget = normalize(targetName);
+
+        const bestMatch = foundChats.find((c: any) => {
+          const normalizedTitle = normalize(c.title);
+          return normalizedTitle === normalizedTarget || normalizedTitle.includes(normalizedTarget);
+        });
+        
+        if (bestMatch) {
+          console.log(`[BEEPER] Found chat: "${bestMatch.title}" for target "${targetName}"`);
+          chatIDs.push(bestMatch.id);
         } else {
-          console.warn(`[BEEPER] Chat NOT found for name: ${targetName}`);
+          console.warn(`[BEEPER] Chat NOT found for name: "${targetName}"`);
         }
       }
     } catch (error) {
-      console.error('[BEEPER] Error listing chats:', error);
+      console.error('[BEEPER] Error searching for chats:', error);
     }
 
     return Array.from(new Set(chatIDs)); // Unique IDs
