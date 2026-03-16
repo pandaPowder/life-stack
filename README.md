@@ -37,6 +37,7 @@ npm start
 You can change the Gmail search query using the `-q` flag:
 ```bash
 npm start -- -q "from:teacher@school.edu"
+npm start -- --query "label:Kids"
 ```
 
 ### 🧠 Personalized Context
