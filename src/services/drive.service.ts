@@ -19,12 +19,13 @@ export class DriveService {
       });
 
       const folders = res.data.files || [];
-      if (folders.length === 0) {
-        console.warn(`[DRIVE] No folder named "${folderName}" found.`);
+      const firstFolder = folders[0];
+      if (!firstFolder || !firstFolder.id) {
+        console.warn(`[DRIVE] No folder named "${folderName}" found or it has no ID.`);
         return '';
       }
 
-      const folderId = folders[0].id;
+      const folderId = firstFolder.id;
 
       // List all Google Docs in the "AI Context" folder
       const docsRes = await this.drive.files.list({

@@ -4,3 +4,7 @@ dist
 *.log
 token.json
 credentials.json
+.gemini/
+
+# Generated files
+weekly-parenting-plan.md

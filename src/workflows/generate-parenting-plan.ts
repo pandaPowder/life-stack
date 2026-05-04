@@ -1,59 +1,14 @@
 import 'dotenv/config';
 import { program } from 'commander';
-import { AuthService } from './services/auth.service.js';
-import { GmailService } from './services/gmail.service.js';
-import { DriveService } from './services/drive.service.js';
-import { SwayService } from './services/sway.service.js';
-import { AIService } from './services/ai.service.js';
-import { BeeperService } from './services/beeper.service.js';
+import { AuthService } from '../services/auth.service.js';
+import { GmailService } from '../services/gmail.service.js';
+import { DriveService } from '../services/drive.service.js';
+import { SwayService } from '../services/sway.service.js';
+import { AIService } from '../services/ai.service.js';
+import { BeeperService } from '../services/beeper.service.js';
+import { PlanFormatter } from '../domains/parenting/formatter.js';
+import type { SourceLink } from '../domains/parenting/formatter.js';
 import * as fs from 'fs/promises';
-
-interface SourceLink {
-  title: string;
-  url?: string;
-  type: 'gmail' | 'whatsapp' | 'sway';
-}
-
-async function writePlanToMarkdown(plan: any, sourceMap: Map<string, SourceLink>) {
-  const getCitations = (sources?: string[]) => {
-    if (!sources || sources.length === 0) return '';
-    const links = sources.map(s => {
-      // Try exact match, then try removing "WhatsApp Chat History" prefix if AI added it
-      const cleanSource = s.replace(/^WhatsApp Chat History \((.*)\)$/, '$1').trim();
-      const link = sourceMap.get(s) || sourceMap.get(cleanSource);
-      
-      if (link && link.url) {
-        return `[[src](${link.url})]`;
-      }
-      return `[${s}]`;
-    });
-    return ` ${links.join(' ')}`;
-  };
-
-  let output = `
-# WEEKLY PARENTING PLAN
-*Generated on ${new Date().toLocaleDateString()}*
-
-## 📚 HOMEWORK SUPPORT
-${plan.homeworkSupport.length === 0 ? 'None found.' : plan.homeworkSupport.map((t: any) => `- [${t.child}] **${t.subject}**: ${t.description} (Due: ${t.dueDate || 'N/A'})${getCitations(t.sources)}`).join('\n')}
-
-## 🛒 PURCHASES NEEDED
-${plan.purchasesNeeded.length === 0 ? 'None found.' : plan.purchasesNeeded.map((p: any) => `- [${p.priority.toUpperCase()}] **${p.item}**: ${p.reason}${getCitations(p.sources)}`).join('\n')}
-
-## 🗓️ UPCOMING ACTIVITIES
-${plan.upcomingActivities.length === 0 ? 'None found.' : plan.upcomingActivities.map((a: any) => `- **${a.title}** (${a.date}) @ ${a.location || 'School'}${a.requirements?.length ? `\\n  *Requirements: ${a.requirements.join(', ')}*` : ''}${getCitations(a.sources)}`).join('\n')}
-
-## 📢 ANNOUNCEMENTS
-${plan.announcements.length === 0 ? 'None found.' : plan.announcements.map((ann: any) => `- ${ann.text}${getCitations(ann.sources)}`).join('\n')}
-
----
-## 🔍 SOURCES
-${Array.from(sourceMap.values()).map(s => `- [${s.type.toUpperCase()}] ${s.url ? `[${s.title}](${s.url})` : s.title}`).join('\n')}
-`;
-
-  await fs.writeFile('weekly-parenting-plan.md', output.trim());
-  console.log('\n[SUCCESS] Plan written to weekly-parenting-plan.md');
-}
 
 async function run() {
   program
@@ -154,7 +109,9 @@ async function run() {
     console.log('\n--- Step 5: Generating Parenting Plan with Unified Context ---');
     const plan = await ai.generateParentingPlan(consolidatedText, context);
 
-    await writePlanToMarkdown(plan, sourceMap);
+    const markdown = PlanFormatter.formatMarkdown(plan, sourceMap);
+    await PlanFormatter.writeToFile('weekly-parenting-plan.md', markdown);
+    console.log('\n[SUCCESS] Plan written to weekly-parenting-plan.md');
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');
