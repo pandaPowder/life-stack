@@ -11,9 +11,9 @@ export class GmailService {
   async fetchRecentSchoolEmails(query: string = 'sway') {
     if (!this.gmail) throw new Error('Gmail not authorized');
 
-    // Look back 14 days
-    const fourteenDaysAgo = Math.floor((Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000);
-    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${fourteenDaysAgo}`;
+    // Look back 45 days to capture monthly newsletters
+    const fortyFiveDaysAgo = Math.floor((Date.now() - 45 * 24 * 60 * 60 * 1000) / 1000);
+    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${fortyFiveDaysAgo}`;
     
     const res = await this.gmail.users.messages.list({
       userId: "me",
@@ -48,6 +48,10 @@ export class GmailService {
       const swayLinks = await Promise.all(rawLinks.map(link => {
         if (link.includes('sendgrid.net')) {
           return resolveLink(link);
+        }
+        if (link.includes('cloud.microsoft/s/')) {
+          // Canonicalize Microsoft Sway links for Playwright
+          return link.replace('/embed', '');
         }
         return Promise.resolve(link);
       }));

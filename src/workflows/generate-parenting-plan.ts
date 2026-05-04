@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ override: true });
 import { program } from 'commander';
 import { AuthService } from '../services/auth.service.js';
 import { GmailService } from '../services/gmail.service.js';

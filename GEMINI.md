@@ -1,4 +1,4 @@
-# Gemini Project Context: Parenting Automation
+# Gemini Project Context: Life Automation
 
 This project is a TypeScript/Node.js automation tool designed to help manage school-related communications and planning.
 
