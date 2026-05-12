@@ -4,15 +4,17 @@ import type { ParentingPlan } from '../types/index.js';
 export class AIService {
   private genAI: GoogleGenerativeAI;
   private model: any;
+  private textModel: any;
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ 
+    this.model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       }
     });
+    this.textModel = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
 
   /**
@@ -64,5 +66,21 @@ export class AIService {
     const plan = JSON.parse(response.text());
     console.log(`[AI] Generated plan with ${plan.homeworkSupport.length + plan.purchasesNeeded.length + plan.upcomingActivities.length + plan.announcements.length} items.`);
     return plan;
+  }
+
+  async ask(question: string, context: string): Promise<string> {
+    const prompt = `You are a personal assistant helping Dallas manage his family and career.
+Dallas has ADHD and needs a single, direct answer — no preamble, no bullet lists unless specifically asked.
+When your answer refers to something from the context, preserve the citation links exactly as they appear (e.g. [[src](url)]).
+
+CONTEXT (from this week's parenting plan and career notes):
+---
+${context}
+---
+
+QUESTION: ${question}`;
+
+    const result = await this.textModel.generateContent(prompt);
+    return result.response.text();
   }
 }
