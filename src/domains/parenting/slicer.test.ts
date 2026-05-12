@@ -87,6 +87,25 @@ describe('PlanSlicer', () => {
       const grahamMd = PlanSlicer.sliceByChild(plan, 'Graham');
       expect(grahamMd).not.toContain('## 🔍 SOURCES');
     });
+
+    it('matches full names like [Graham Despain] to the Graham slice', () => {
+      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Graham Despain] **Math**: Stuff (Due: Friday)\n- [Nora Despain] **Reading**: Things (Due: Monday)\n`;
+      const plan = PlanSlicer.parse(md);
+      const grahamMd = PlanSlicer.sliceByChild(plan, 'Graham');
+      expect(grahamMd).toContain('Stuff');
+      expect(grahamMd).not.toContain('Things');
+      const noraMd = PlanSlicer.sliceByChild(plan, 'Nora');
+      expect(noraMd).toContain('Things');
+      expect(noraMd).not.toContain('Stuff');
+    });
+
+    it('does not include other children\'s homework in Ansel\'s slice when none exists for him', () => {
+      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Graham Despain] **Math**: Stuff (Due: Friday)\n`;
+      const plan = PlanSlicer.parse(md);
+      const anselMd = PlanSlicer.sliceByChild(plan, 'Ansel');
+      expect(anselMd).not.toContain('HOMEWORK');
+      expect(anselMd).not.toContain('Stuff');
+    });
   });
 
   describe('pickTopItems', () => {

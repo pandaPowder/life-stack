@@ -16,14 +16,14 @@ function extractEmoji(heading: string): string {
   return heading.match(/\p{Emoji}/u)?.[0] ?? '';
 }
 
-// Items whose "tag" is a child name, e.g. [Graham], [Nora], [Ansel]
+// Matches items tagged with a specific child's first name, e.g. [Graham] or [Graham Despain]
 function childTagPattern(child: string) {
-  return new RegExp(`^- \\[${child}\\]`, 'i');
+  return new RegExp(`^- \\[${child}([ \\]]|$)`, 'i');
 }
 
-// Any item tagged with a known child name
+// Matches any item tagged with a known child's first name
 const anyChildPattern = new RegExp(
-  `^- \\[(${CHILD_NAMES.join('|')})\\]`,
+  `^- \\[(${CHILD_NAMES.join('|')})([ \\]]|$)`,
   'i'
 );
 
