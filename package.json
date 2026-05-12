@@ -9,7 +9,8 @@
     "dev": "tsx watch src/workflows/generate-parenting-plan.ts",
     "derive-slices": "tsx src/workflows/derive-slices.ts",
     "ask": "tsx src/workflows/ask.ts",
-    "track-jobs": "tsx src/workflows/track-job-applications.ts"
+    "track-jobs": "tsx src/workflows/track-job-applications.ts",
+    "morning": "tsx src/workflows/morning.ts"
   },
   "keywords": [],
   "author": "",

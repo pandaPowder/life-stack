@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { PlanSlicer } from '../domains/parenting/slicer.js';
 
 const PLAN_FILE = 'weekly-parenting-plan.md';
@@ -16,7 +17,7 @@ async function write(filePath: string, content: string) {
   console.log(`  wrote ${filePath}`);
 }
 
-async function main() {
+export async function run() {
   const planPath = path.join(process.cwd(), PLAN_FILE);
   let markdown: string;
   try {
@@ -44,15 +45,17 @@ async function main() {
   const today = PlanSlicer.pickTopItems(plan, 5);
   await write(path.join(DATA_DIR, 'today.md'), today);
 
-  // data/career/this-week.md — empty stub until track-job-applications is wired
-  const careerStub = [
-    '# CAREER — THIS WEEK',
-    '',
-    '*No career data yet. Run track-job-applications to populate this.*',
-  ].join('\n');
-  await write(path.join(DATA_DIR, 'career', 'this-week.md'), careerStub);
+  // data/career/this-week.md — owned by track-job-applications; only seed if missing
+  const careerPath = path.join(DATA_DIR, 'career', 'this-week.md');
+  try {
+    await fs.access(careerPath);
+    console.log(`  skipped ${careerPath} (already populated by track-jobs)`);
+  } catch {
+    const stub = '# CAREER — THIS WEEK\n\n*No career data yet. Run npm run track-jobs to populate this.*';
+    await write(careerPath, stub);
+  }
 
   console.log('Done.');
 }
 
-main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) run();
