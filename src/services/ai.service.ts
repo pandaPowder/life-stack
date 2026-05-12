@@ -1,5 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ParentingPlan } from '../types/index.js';
+import type { RecruiterEmail, JobApplication } from '../domains/career/types.js';
+import { JobApplicationsResponseSchema } from '../domains/career/types.js';
 
 export class AIService {
   private genAI: GoogleGenerativeAI;
@@ -66,6 +68,57 @@ export class AIService {
     const plan = JSON.parse(response.text());
     console.log(`[AI] Generated plan with ${plan.homeworkSupport.length + plan.purchasesNeeded.length + plan.upcomingActivities.length + plan.announcements.length} items.`);
     return plan;
+  }
+
+  async parseJobApplications(emails: RecruiterEmail[]): Promise<JobApplication[]> {
+    if (emails.length === 0) return [];
+
+    const emailsText = emails
+      .map(e =>
+        `EMAIL_ID: ${e.id}\nFrom: ${e.sender}\nSubject: ${e.subject}\nDate: ${e.date.toISOString().split('T')[0]}\nBody:\n${e.body.slice(0, 2000)}`,
+      )
+      .join('\n\n---\n\n');
+
+    const prompt = `You are parsing job-search emails for Dallas to build a job application tracker.
+
+Group emails by unique company+role. For each group, return the current state based on the most recent email.
+
+STATUS RULES:
+- "outreach": a recruiter contacted Dallas but no application has been submitted
+- "applied": Dallas applied (application confirmation or submission)
+- "interviewing": interview is scheduled or has happened, awaiting next steps
+- "offered": a job offer was extended
+- "rejected": application was declined
+- "withdrawn": Dallas withdrew
+
+For appliedDate use the date of the most relevant email (first contact or application submission).
+Include the EMAIL_IDs of all relevant emails in the emailIds array (use the exact ID strings).
+Omit purely promotional/newsletter emails (e.g. job alert digests with no specific outreach).
+
+Return JSON:
+{
+  "applications": [{
+    "company": string,
+    "role": string,
+    "appliedDate": string (YYYY-MM-DD or descriptive),
+    "status": "outreach"|"applied"|"interviewing"|"offered"|"rejected"|"withdrawn",
+    "location": string (optional),
+    "source": string (optional, e.g. "LinkedIn", "Referral"),
+    "notes": string (optional, one sentence on next steps or key detail),
+    "emailIds": string[]
+  }]
+}
+
+EMAILS:
+---
+${emailsText}
+---`;
+
+    const result = await this.model.generateContent(prompt);
+    const raw = JSON.parse(result.response.text());
+    const parsed = JobApplicationsResponseSchema.parse(raw);
+    console.log(`[AI] Parsed ${parsed.applications.length} job applications.`);
+    return parsed.applications;
   }
 
   async ask(question: string, context: string): Promise<string> {
