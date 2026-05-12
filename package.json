@@ -6,7 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "start": "tsx src/workflows/generate-parenting-plan.ts",
-    "dev": "tsx watch src/workflows/generate-parenting-plan.ts"
+    "dev": "tsx watch src/workflows/generate-parenting-plan.ts",
+    "derive-slices": "tsx src/workflows/derive-slices.ts"
   },
   "keywords": [],
   "author": "",
