@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "feedback": {
+      "source": "manager-dot-dev/manager-skills",
+      "sourceType": "github",
+      "skillPath": "skills/feedback/SKILL.md",
+      "computedHash": "3fda5b715b8f5c3a63a93b4656ed320ee9c9f4f899216d32ae51ea56d09c2050"
+    },
+    "managing-up": {
+      "source": "manager-dot-dev/manager-skills",
+      "sourceType": "github",
+      "skillPath": "skills/managing-up/SKILL.md",
+      "computedHash": "25a9544efe2b325718966bb8ea2f7fd2d91c5e9fbd1d6d3817464e6773ebc53d"
+    }
+  }
+}

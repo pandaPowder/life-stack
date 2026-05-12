@@ -1,12 +1,12 @@
 {
-  "name": "parenting",
+  "name": "life",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts"
+    "test": "vitest run",
+    "start": "tsx src/workflows/generate-parenting-plan.ts",
+    "dev": "tsx watch src/workflows/generate-parenting-plan.ts"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +29,7 @@
     "@types/dotenv": "^6.1.1",
     "@types/node": "^25.3.5",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.0"
   }
 }

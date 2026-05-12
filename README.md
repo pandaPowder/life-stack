@@ -33,6 +33,11 @@ npm start
 ```
 *The first time you run this, it will open a browser window to authorize Gmail access. It will save a `token.json` for future use.*
 
+### 5. Run Tests
+```bash
+npm test
+```
+
 ## 🛠️ Customization
 You can change the Gmail search query using the `-q` flag:
 ```bash
@@ -51,3 +56,4 @@ This tool integrates with your Google Drive. To provide personalized context for
 *   **Playwright:** For scraping Microsoft Sway (JavaScript-heavy).
 *   **Google Gemini (gemini-2.5-flash):** For stable, high-performance summarization and JSON extraction in 2026.
 *   **Google APIs:** For Gmail access.
+*   **Vitest:** For unit testing.
