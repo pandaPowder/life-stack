@@ -6,5 +6,12 @@ token.json
 credentials.json
 .gemini/
 
+# Claude Code internal tooling (worktrees, etc.)
+.claude/
+
+# Local agent context — personal, not for sharing
+.agents/
+
 # Generated files
 weekly-parenting-plan.md
+data/
