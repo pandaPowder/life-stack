@@ -1,15 +1,32 @@
 import 'dotenv/config';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { AuthService } from '../services/auth.service.js';
 import { GmailService } from '../services/gmail.service.js';
 import { AIService } from '../services/ai.service.js';
-import type { JobApplication } from '../domains/career/types.js';
+import { formatApplications, formatThisWeek } from '../domains/career/formatter.js';
+
+const DATA_DIR = 'data/career';
+const GMAIL_QUERY = [
+  'subject:opportunity',
+  'subject:interview',
+  'subject:offer',
+  'subject:"job opportunity"',
+  'subject:"open role"',
+  'subject:"your application"',
+  'subject:recruiting',
+  'from:linkedin.com',
+  'from:greenhouse.io',
+  'from:lever.co',
+  'from:ashbyhq.com',
+  'from:workday.com',
+  'from:smartrecruiters.com',
+].join(' OR ');
 
 async function run() {
   console.log('--- Career Tracking Workflow ---');
-  
-  // This will eventually fetch recruiter emails, parse them with AI,
-  // and update a Google Sheet or local database of job applications.
-  
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error('Missing GEMINI_API_KEY');
@@ -19,26 +36,55 @@ async function run() {
   const auth = new AuthService();
   const ai = new AIService(apiKey);
 
-  try {
-    console.log('1. Authorizing...');
-    await auth.authorize();
-    
-    const gmail = new GmailService(auth.auth);
-    
-    console.log('2. Searching for job-related emails...');
-    // Placeholder query
-    const query = 'subject:job OR subject:application OR subject:recruiter';
-    const emails = await gmail.fetchRecentSchoolEmails(query); // Reusing for now
-    
-    console.log(`Found ${emails.length} potential career-related emails.`);
-    
-    // Future implementation:
-    // const applications = await ai.parseJobApplications(emails);
-    // console.log(applications);
+  console.log('1. Authorizing...');
+  await auth.authorize();
 
-  } catch (error) {
-    console.error('Workflow failed:', error);
+  const gmail = new GmailService(auth.auth);
+
+  console.log('2. Searching for job-related emails...');
+  const emails = await gmail.fetchRecentSchoolEmails(GMAIL_QUERY);
+  console.log(`   Found ${emails.length} potential career-related emails.`);
+
+  if (emails.length === 0) {
+    console.log('   No emails found — writing empty career files.');
+    await writeOutputs([]);
+    return;
   }
+
+  console.log('3. Parsing applications with AI...');
+  const applications = await ai.parseJobApplications(emails);
+
+  console.log('4. Writing career files...');
+  await writeOutputs(applications);
+
+  console.log('\nActive applications:');
+  applications
+    .filter(a => !['rejected', 'withdrawn'].includes(a.status))
+    .forEach(a => console.log(`  - ${a.company} — ${a.role} (${a.status})`));
 }
 
-run();
+async function writeOutputs(applications: Awaited<ReturnType<AIService['parseJobApplications']>>) {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+
+  const now = new Date();
+  await fs.writeFile(
+    path.join(DATA_DIR, 'applications.md'),
+    formatApplications(applications, now),
+    'utf8',
+  );
+  console.log(`  wrote ${DATA_DIR}/applications.md`);
+
+  await fs.writeFile(
+    path.join(DATA_DIR, 'this-week.md'),
+    formatThisWeek(applications, now),
+    'utf8',
+  );
+  console.log(`  wrote ${DATA_DIR}/this-week.md`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  run().catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
+}
