@@ -18,3 +18,6 @@ data/
 
 # Personal inputs (resume, JDs, notes) — not for sharing
 inputs/
+
+# Personal config (names, communication style) — copy from user.config.example.json
+user.config.json

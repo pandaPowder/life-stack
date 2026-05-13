@@ -2,10 +2,11 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { PlanSlicer } from '../domains/parenting/slicer.js';
+import { userConfig } from '../config/user.js';
 
 const PLAN_FILE = 'weekly-parenting-plan.md';
 const DATA_DIR = 'data';
-const CHILDREN = ['Graham', 'Nora', 'Ansel'] as const;
+const CHILDREN = userConfig.children;
 
 async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });

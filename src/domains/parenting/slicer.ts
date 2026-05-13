@@ -9,23 +9,21 @@ export interface ParsedPlan {
   sections: ParsedSection[];
 }
 
-const CHILD_NAMES = ['Graham', 'Nora', 'Ansel'] as const;
-export type Child = (typeof CHILD_NAMES)[number];
+import { userConfig } from '../../config/user.js';
 
 function extractEmoji(heading: string): string {
   return heading.match(/\p{Emoji}/u)?.[0] ?? '';
 }
 
-// Matches items tagged with a specific child's first name, e.g. [Graham] or [Graham Despain]
+// Matches items tagged with a specific child's first name, e.g. [Alex] or [Alex Smith]
 function childTagPattern(child: string) {
   return new RegExp(`^- \\[${child}([ \\]]|$)`, 'i');
 }
 
-// Matches any item tagged with a known child's first name
-const anyChildPattern = new RegExp(
-  `^- \\[(${CHILD_NAMES.join('|')})([ \\]]|$)`,
-  'i'
-);
+// Matches any item tagged with one of the known children's first names
+function anyChildPattern(children: string[]) {
+  return new RegExp(`^- \\[(${children.join('|')})([ \\]]|$)`, 'i');
+}
 
 // Urgency score for a due-date string (lower = more urgent)
 function dueDateScore(dueDate: string): number {
@@ -81,8 +79,9 @@ export class PlanSlicer {
     return { header: headerLines.join('\n').trim(), sections };
   }
 
-  static sliceByChild(plan: ParsedPlan, child: Child): string {
+  static sliceByChild(plan: ParsedPlan, child: string, allChildren: string[] = userConfig.children): string {
     const isChildItem = childTagPattern(child);
+    const childPat = anyChildPattern(allChildren);
     const lines: string[] = [
       `# ${child.toUpperCase()} — THIS WEEK`,
       `*Derived from weekly parenting plan — ${new Date().toLocaleDateString()}*`,
@@ -94,7 +93,7 @@ export class PlanSlicer {
       // If section has any child-tagged items, include only this child's
       // (homework). Otherwise include everything (purchases, activities,
       // announcements are shared).
-      const sectionHasChildTags = section.items.some(i => anyChildPattern.test(i));
+      const sectionHasChildTags = section.items.some(i => childPat.test(i));
       const items = sectionHasChildTags
         ? section.items.filter(i => isChildItem.test(i))
         : section.items;
