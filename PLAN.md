@@ -1,82 +1,152 @@
-# Active Plan: Scheduling + Task Write-Back
+# Active Plan: Add a Retrieval / Daily-Driver Layer
 
 **Status:** ready to start
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-12
 
-## What's done
+## Background
 
-The retrieval layer is fully live:
+The repo today is a **generator**: `generate-parenting-plan.ts` runs once
+a week and emits one large markdown file (`weekly-parenting-plan.md`)
+full of homework items, activities, and to-dos with citations back to
+Gmail and Beeper. That works for capture, but it produces the wrong
+shape for daily decision-making — a flat 100-item list is the worst
+possible interface for an ADHD brain trying to figure out the *one* most
+important thing to do today.
 
-- `npm run morning` runs `derive-slices` → `sync-tasks` → two AI questions (kids + career)
-- Career tracker catches direct recruiter outreach (not just ATS domains)
-- Todoist tasks are fetched via the official SDK and injected into AI context
-- AI prompt is task-aware: calls out what's already captured vs. what needs to be added
-- 63 tests passing
+The missing piece is a **retrieval/conversation layer** on top of the
+markdown the pipeline already produces. The frame is from manager.dev's
+"The engineering management memory crisis" (2026-05-12) and James
+Stanier's "My CTO daily driver":
 
-## Guiding principle
+> Brain = RAM (great for processing, runs out under load).
+> Notes = HDD (storage, but slow to use).
+> LLM over a structured markdown repo = SSD + smart filesystem.
+> **You can't outsource the thinking. You can outsource the storage and retrieval.**
 
-Same as always: additive, never destructive. Existing workflows keep running unchanged.
+The point of the new layer is *not* to make decisions for Dallas. It's
+to surface the right one or two questions to think about each morning.
 
-## Tasks (do in order, ship after each)
+## Goal
 
-### 1. Schedule `morning` and `track-jobs` as cron jobs
+Each morning, in ~30 seconds, get an answer to:
 
-Both workflows are stable enough to run unattended. The right cadence:
+1. What is the single most important thing for me to do for the **kids**
+   today (and why, with a citation)?
+2. What is the single most important thing for me to do for the **job
+   search** today (and why, with a citation)?
 
-- **`morning`**: daily at 7:00 AM — the whole point is to have it waiting when Dallas wakes up
-- **`track-jobs`**: every weekday at 6:50 AM — runs before `morning` so career context is fresh
+That's it. Anything more elaborate is scope creep at this stage.
 
-**Implementation:** use the existing `mcp__scheduled-tasks` infrastructure that's already in this repo's
-Claude Code setup, or write a launchd plist (macOS). Prefer launchd so it survives Claude Code not being
-open; fall back to a cron entry if launchd is too brittle.
+## Guiding principle: additive, never destructive
 
-Output should land in a log file (`logs/morning.log`, `logs/track-jobs.log`) so failures are visible
-without needing to watch a terminal.
+The existing parenting-plan pipeline works. It runs weekly. It produces
+`weekly-parenting-plan.md` and that file has been keeping things from
+falling through cracks. **Do not modify `generate-parenting-plan.ts` or
+`PlanFormatter` as part of this plan.** Every new capability is
+additive: new workflows, new scripts, new output files. If anything in
+the new layer breaks, the existing pipeline keeps running unchanged and
+nothing is lost.
 
-**Verification:** let it run once unattended, confirm log exists and output is correct.
+## The one next step
 
-### 2. Task write-back from morning briefing
+Add a postprocess that derives per-child and daily slices from
+`weekly-parenting-plan.md`, leaving the original untouched.
 
-`createTask()` is already implemented in `TodoistService` but nothing calls it yet.
+**Concrete tasks (do in order, ship after each one):**
 
-The morning briefing currently says "this isn't in Todoist — it should be added." The next step is to
-actually add it, either:
+1. **Add a slicing postprocess.**
+   The existing pipeline keeps generating `weekly-parenting-plan.md` at
+   the repo root. This task adds a new workflow that reads that file and
+   produces a derived view tree:
 
-- **Option A (interactive):** after the two AI answers, print any suggested tasks and prompt
-  `Add to Todoist? [y/N]` for each. Simple, explicit, no surprises.
-- **Option B (automatic):** if the AI identifies a clear next action not already in Todoist, create it
-  silently and print a confirmation line.
+   ```
+   data/
+     this-week.md            # all-up view — copy of weekly-parenting-plan.md
+     today.md                # ≤5 items, regenerated each morning
+     kids/
+       graham/this-week.md
+       nora/this-week.md
+       ansel/this-week.md
+     career/
+       this-week.md
+       applications.md       # job tracker output (later)
+   ```
 
-Prefer Option A first — get a feel for what the AI actually suggests before automating it.
+   - New file: `src/workflows/derive-slices.ts`. Reads
+     `weekly-parenting-plan.md`, parses by per-child sections (and
+     career/other sections), writes to `data/`. Idempotent — safe to run
+     repeatedly.
+   - Keep `weekly-parenting-plan.md` as the source of truth. The
+     `data/` tree is derived; if it gets stale or wrong, delete `data/`
+     and re-run.
+   - Preserve all citations (Gmail message IDs, Beeper chat IDs) when
+     splitting.
+   - If a child has no items (some schools may not be emailing the
+     searched Gmail account — see loose end), their file is created
+     empty with a note rather than skipped.
+   - Add `data/` to `.gitignore` (already done in this session — verify).
+   - One Vitest smoke test: feed a fixture markdown in, assert the
+     expected per-child files come out with citations preserved.
 
-**New flow in `morning.ts`:**
-1. Parse the career and kids answers for suggested actions (simple heuristic: lines starting with
-   "You should" / "Consider" / "Follow up" — or ask the AI to return structured action items)
-2. For each: check if a similar task already exists in the fetched task list (fuzzy string match on content)
-3. If not found, prompt and optionally create
+   **Verification before considering this task done:** run the existing
+   `npm start` (parenting plan generator) and confirm
+   `weekly-parenting-plan.md` is byte-identical to last week's output
+   (modulo new content). The new workflow must not affect the original
+   in any way.
 
-**Verification:** run `npm run morning`, confirm at least one suggested task gets offered, accept it,
-verify it appears in Todoist.
+2. **Add `src/workflows/ask.ts`.**
+   - CLI entry: `npm run ask -- "what's my top thing for the kids today?"`
+   - Reads `data/today.md`, `data/kids/**/this-week.md`,
+     `data/career/this-week.md`, **and `weekly-parenting-plan.md` as a
+     fallback** (so it works even if `derive-slices` hasn't run).
+   - Sends the question + context to `gemini-2.5-flash` (same model as
+     the generator — don't introduce a new provider yet).
+   - Returns an answer with citations.
+   - Write one Vitest smoke test that mocks the model and asserts the
+     prompt was assembled correctly.
 
-### 3. Paginate Gmail results in career tracker
+3. **Wire up `track-job-applications.ts`** (currently a scaffold).
+   - Use `AIService` (extend it) to extract structured `JobApplication`
+     objects from recruiter emails using the Zod schema in
+     `domains/career/types.ts`.
+   - Write output to `data/career/applications.md`.
+   - This is the natural Node.js portfolio exercise — real OAuth, real
+     API, real schema validation, real tests.
 
-The Gmail API caps at 100 messages per call. With the broadened query the 30-day window regularly
-hits this limit; active applications could be silently dropped.
+4. **Add a daily driver script.**
+   - `npm run morning` → runs `derive-slices`, then runs `ask` twice
+     with the two questions above, prints both answers to the terminal.
+   - That becomes the morning habit. Run it before doing anything else.
 
-`fetchRecentSchoolEmails` in `gmail.service.ts` needs a pagination loop using `nextPageToken`.
-Cap total results at 500 to avoid runaway API usage.
+## Explicitly out of scope right now
 
-**Verification:** run `npm run track-jobs --days 60` and confirm total fetched exceeds 100 if the
-inbox has that many matching emails.
+- Modifying `generate-parenting-plan.ts` or `PlanFormatter`.
+- Deleting or renaming `weekly-parenting-plan.md`. It stays.
+- Installing Cabinet. (Too immature, wrong shape for personal use.)
+- Migrating to Tolaria. (Maybe useful later as a GUI viewer over
+  `data/`; it's just markdown, so the migration is free when you want
+  it.)
+- Building a web UI.
+- Replacing Gemini with Claude in the production pipeline.
+- Reorganizing `domains/` or `services/`.
+- Reading 40 management books.
 
-## Explicitly out of scope
+## Loose ends that block nothing right now
 
-- Modifying `generate-parenting-plan.ts` or `PlanFormatter`
-- Multi-question morning sessions (current two-question format is working well)
-- Todoist project/label filtering (the `today | overdue` filter is the right scope for now)
+- **One child's school** may not be emailing the Gmail account the
+  pipeline searches. If a `data/kids/[child]/this-week.md` file is
+  consistently empty, address by adding a sync source for that child —
+  separate task, not part of this plan.
+- **Source-of-truth question** for kids context (Drive `AI Context` vs.
+  `.agents/people/`). Decide after 2 weeks of using `npm run morning` —
+  not now.
 
-## Definition of done (full plan)
+## Definition of done for this plan
 
-- `morning` runs at 7 AM without any terminal open
-- Tasks suggested by the AI briefing can be added to Todoist in one keypress
-- Career tracker never silently drops emails due to the 100-result cap
+When the four tasks above are shipped and `npm run morning` produces a
+useful, cited two-line answer each morning, this plan is complete. At
+that point, open a fresh `PLAN.md` and decide the next thing.
+
+The existing weekly pipeline must still produce
+`weekly-parenting-plan.md` exactly as before. If it doesn't, this plan
+is **not** done — back out the change.

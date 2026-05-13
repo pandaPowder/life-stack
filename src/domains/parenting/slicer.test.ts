@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { PlanSlicer } from './slicer.js';
 
+const CHILDREN = ['Alex', 'Sam', 'Jordan'];
+
 const FIXTURE = `# WEEKLY PARENTING PLAN
 *Generated on 5/12/2026*
 
 ## 📚 HOMEWORK SUPPORT
-- [Graham] **Math**: Algebra worksheet (Due: Tomorrow) [[src](https://mail.google.com/1)]
-- [Nora] **Reading**: Chapter 4 (Due: Friday) [[src](https://mail.google.com/2)]
-- [Ansel] **Science**: Volcano project (Due: Monday) [[src](https://mail.google.com/3)]
+- [Alex] **Math**: Algebra worksheet (Due: Tomorrow) [[src](https://mail.google.com/1)]
+- [Sam] **Reading**: Chapter 4 (Due: Friday) [[src](https://mail.google.com/2)]
+- [Jordan] **Science**: Volcano project (Due: Monday) [[src](https://mail.google.com/3)]
 
 ## 🛒 PURCHASES NEEDED
-- [HIGH] **Poster board**: For Ansel's science project [[src](https://mail.google.com/3)]
+- [HIGH] **Poster board**: For Jordan's science project [[src](https://mail.google.com/3)]
 
 ## 🗓️ UPCOMING ACTIVITIES
 - **Spring Concert** (Thursday) @ Jefferson Middle School
@@ -55,56 +57,56 @@ describe('PlanSlicer', () => {
   describe('sliceByChild', () => {
     it('includes only that child\'s homework items', () => {
       const plan = PlanSlicer.parse(FIXTURE);
-      const grahamMd = PlanSlicer.sliceByChild(plan, 'Graham');
-      expect(grahamMd).toContain('Algebra');
-      expect(grahamMd).not.toContain('Chapter 4'); // Nora's
-      expect(grahamMd).not.toContain('Volcano');   // Ansel's
+      const alexMd = PlanSlicer.sliceByChild(plan, 'Alex', CHILDREN);
+      expect(alexMd).toContain('Algebra');
+      expect(alexMd).not.toContain('Chapter 4'); // Sam's
+      expect(alexMd).not.toContain('Volcano');   // Jordan's
     });
 
     it('includes shared sections (purchases, activities, announcements)', () => {
       const plan = PlanSlicer.parse(FIXTURE);
-      const noraMd = PlanSlicer.sliceByChild(plan, 'Nora');
-      expect(noraMd).toContain('Poster board');    // purchases
-      expect(noraMd).toContain('Spring Concert');  // activities
-      expect(noraMd).toContain('photo retake');    // announcements
+      const samMd = PlanSlicer.sliceByChild(plan, 'Sam', CHILDREN);
+      expect(samMd).toContain('Poster board');    // purchases
+      expect(samMd).toContain('Spring Concert');  // activities
+      expect(samMd).toContain('photo retake');    // announcements
     });
 
     it('produces an empty homework section for a child with no items', () => {
-      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Graham] **Math**: Stuff (Due: Friday)\n`;
+      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Alex] **Math**: Stuff (Due: Friday)\n`;
       const plan = PlanSlicer.parse(md);
-      const noraMd = PlanSlicer.sliceByChild(plan, 'Nora');
-      expect(noraMd).not.toContain('HOMEWORK'); // section omitted when empty
+      const samMd = PlanSlicer.sliceByChild(plan, 'Sam', CHILDREN);
+      expect(samMd).not.toContain('HOMEWORK'); // section omitted when empty
     });
 
     it('preserves citations in per-child output', () => {
       const plan = PlanSlicer.parse(FIXTURE);
-      const anselMd = PlanSlicer.sliceByChild(plan, 'Ansel');
-      expect(anselMd).toContain('[[src](https://mail.google.com/3)]');
+      const jordanMd = PlanSlicer.sliceByChild(plan, 'Jordan', CHILDREN);
+      expect(jordanMd).toContain('[[src](https://mail.google.com/3)]');
     });
 
     it('excludes the SOURCES section', () => {
       const plan = PlanSlicer.parse(FIXTURE);
-      const grahamMd = PlanSlicer.sliceByChild(plan, 'Graham');
-      expect(grahamMd).not.toContain('## 🔍 SOURCES');
+      const alexMd = PlanSlicer.sliceByChild(plan, 'Alex', CHILDREN);
+      expect(alexMd).not.toContain('## 🔍 SOURCES');
     });
 
-    it('matches full names like [Graham Despain] to the Graham slice', () => {
-      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Graham Despain] **Math**: Stuff (Due: Friday)\n- [Nora Despain] **Reading**: Things (Due: Monday)\n`;
+    it('matches full names like [Alex Smith] to the Alex slice', () => {
+      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Alex Smith] **Math**: Stuff (Due: Friday)\n- [Sam Smith] **Reading**: Things (Due: Monday)\n`;
       const plan = PlanSlicer.parse(md);
-      const grahamMd = PlanSlicer.sliceByChild(plan, 'Graham');
-      expect(grahamMd).toContain('Stuff');
-      expect(grahamMd).not.toContain('Things');
-      const noraMd = PlanSlicer.sliceByChild(plan, 'Nora');
-      expect(noraMd).toContain('Things');
-      expect(noraMd).not.toContain('Stuff');
+      const alexMd = PlanSlicer.sliceByChild(plan, 'Alex', CHILDREN);
+      expect(alexMd).toContain('Stuff');
+      expect(alexMd).not.toContain('Things');
+      const samMd = PlanSlicer.sliceByChild(plan, 'Sam', CHILDREN);
+      expect(samMd).toContain('Things');
+      expect(samMd).not.toContain('Stuff');
     });
 
-    it('does not include other children\'s homework in Ansel\'s slice when none exists for him', () => {
-      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Graham Despain] **Math**: Stuff (Due: Friday)\n`;
+    it('does not include other children\'s homework in Jordan\'s slice when none exists for them', () => {
+      const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\n- [Alex Smith] **Math**: Stuff (Due: Friday)\n`;
       const plan = PlanSlicer.parse(md);
-      const anselMd = PlanSlicer.sliceByChild(plan, 'Ansel');
-      expect(anselMd).not.toContain('HOMEWORK');
-      expect(anselMd).not.toContain('Stuff');
+      const jordanMd = PlanSlicer.sliceByChild(plan, 'Jordan', CHILDREN);
+      expect(jordanMd).not.toContain('HOMEWORK');
+      expect(jordanMd).not.toContain('Stuff');
     });
   });
 
@@ -120,9 +122,9 @@ describe('PlanSlicer', () => {
     it('prioritises items with "Tomorrow" due dates before "Friday"', () => {
       const plan = PlanSlicer.parse(FIXTURE);
       const today = PlanSlicer.pickTopItems(plan, 5);
-      const grahamPos = today.indexOf('Algebra'); // Due: Tomorrow
-      const noraPos = today.indexOf('Chapter 4'); // Due: Friday
-      expect(grahamPos).toBeLessThan(noraPos);
+      const alexPos = today.indexOf('Algebra'); // Due: Tomorrow
+      const samPos = today.indexOf('Chapter 4'); // Due: Friday
+      expect(alexPos).toBeLessThan(samPos);
     });
 
     it('returns a fallback message when plan is empty', () => {

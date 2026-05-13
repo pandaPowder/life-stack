@@ -1,0 +1,7 @@
+{
+  "userName": "Your Name",
+  "coparentName": "Co-parent Name",
+  "children": ["Child1", "Child2", "Child3"],
+  "networkContext": "Brief description of your professional network — former employers, industry, alumni groups (e.g. 'Utah tech, SaaS space, alumni of Acme Corp')",
+  "communicationStyle": "Notes on how you want AI responses tailored. Examples: 'Keep responses scannable and concise', 'I have ADHD — clarity over exhaustiveness', 'Use bullet points for action items'"
+}

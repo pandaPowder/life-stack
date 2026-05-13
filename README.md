@@ -21,19 +21,26 @@ To access your Gmail, you need to create a project in the [Google Cloud Console]
 2.  Generate a new API Key.
 3.  Create a `.env` file in this directory and add: `GEMINI_API_KEY=your_key_here`.
 
-### 3. Install Dependencies
+### 3. Personalize
+Copy the example config and fill in your details:
+```bash
+cp user.config.example.json user.config.json
+```
+Edit `user.config.json` with your name, co-parent's name, children's names, and any communication style preferences for AI responses. This file is gitignored.
+
+### 4. Install Dependencies
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-### 4. Run the Tool
+### 5. Run the Tool
 ```bash
 npm start
 ```
 *The first time you run this, it will open a browser window to authorize Gmail access. It will save a `token.json` for future use.*
 
-### 5. Run Tests
+### 6. Run Tests
 ```bash
 npm test
 ```
@@ -48,7 +55,7 @@ npm start -- --query "label:Kids"
 ### 🧠 Personalized Context
 This tool integrates with your Google Drive. To provide personalized context for each child:
 1.  Create a folder in Google Drive named **"AI Context"**.
-2.  Add Google Docs describing your children (e.g., "About Graham", "Ansel's Interests").
+2.  Add Google Docs describing your children (e.g., "About Child1", "Child2's Interests").
 3.  The AI will automatically pull this text and use it to better assign homework tasks, prioritize extracurricular activities (like Band or Theater), and filter out irrelevant school noise.
 
 ## 🏗️ Tech Stack

@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config({ override: true });
+import { userConfig } from '../config/user.js';
 
 export interface BeeperMessage {
   senderName: string;
@@ -124,7 +125,7 @@ export class BeeperService {
 
     let output = '\n--- WhatsApp Chat History (Last 7 Days) ---\n';
     messages.forEach(m => {
-      const senderLabel = m.isFromMe ? `ME (Dallas)` : m.senderName;
+      const senderLabel = m.isFromMe ? `ME (${userConfig.userName})` : m.senderName;
       output += `[${m.chatName}] ${senderLabel} (${new Date(m.timestamp).toLocaleString()}): ${m.text}\n`;
     });
     output += '--- End of WhatsApp History ---\n';

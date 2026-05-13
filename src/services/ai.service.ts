@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ParentingPlan } from '../types/index.js';
 import type { RecruiterEmail, JobApplication } from '../domains/career/types.js';
 import { JobApplicationsResponseSchema } from '../domains/career/types.js';
+import { userConfig } from '../config/user.js';
 
 export class AIService {
   private genAI: GoogleGenerativeAI;
@@ -33,11 +34,11 @@ export class AIService {
       Analyze the text and extract all important information for my children's weekly parenting plan.
       
       IMPORTANT RECIPIENT CONTEXT:
-      - This report is for ME (Dallas). 
-      - In the WhatsApp logs, messages from "ME (Dallas)" are requests or info I have already sent.
+      - This report is for ME (${userConfig.userName}).
+      - In the WhatsApp logs, messages from "ME (${userConfig.userName})" are requests or info I have already sent.
       - DO NOT list requests I made to others as "Homework Support" or "Purchases Needed" for myself.
-      - DO focus on requests or info sent TO me by my co-parent (Jenny) or my kids.
-      - Use my own messages ("ME (Dallas)") only as context to understand agreements or confirmed plans.
+      - DO focus on requests or info sent TO me by my co-parent (${userConfig.coparentName}) or my kids.
+      - Use my own messages ("ME (${userConfig.userName})") only as context to understand agreements or confirmed plans.
       
       PERSONAL CONTEXT (Use this to prioritize and assign tasks):
       ---
@@ -84,17 +85,17 @@ export class AIService {
       )
       .join('\n\n---\n\n');
 
-    const prompt = `You are parsing job-search emails for Dallas to build a job application tracker.
+    const prompt = `You are parsing job-search emails for ${userConfig.userName} to build a job application tracker.
 
 Group emails by unique company+role. For each group, return the current state based on the most recent email.
 
 STATUS RULES:
-- "outreach": a recruiter contacted Dallas but no application has been submitted
-- "applied": Dallas applied (application confirmation or submission)
+- "outreach": a recruiter contacted ${userConfig.userName} but no application has been submitted
+- "applied": ${userConfig.userName} applied (application confirmation or submission)
 - "interviewing": interview is scheduled or has happened, awaiting next steps
 - "offered": a job offer was extended
 - "rejected": application was declined
-- "withdrawn": Dallas withdrew
+- "withdrawn": ${userConfig.userName} withdrew
 
 For appliedDate use the date of the most relevant email (first contact or application submission).
 Include the EMAIL_IDs of all relevant emails in the emailIds array (use the exact ID strings).
@@ -150,13 +151,13 @@ Also search: "${interviewer}" "${company}" to find any articles, talks, blog pos
         : `Search: "${interviewer}" "${company}" site:linkedin.com, then check ${company}'s team/leadership page as a fallback.`;
 
     const connectionsNote = mutualConnections && mutualConnections.length > 0
-      ? `LinkedIn shows Dallas has mutual connections with ${mutualConnections.join(' and ')}. List each by name explicitly and suggest how to use them as a warm opener (e.g. "You and I are both connected to Curtis — how do you know them?").`
+      ? `LinkedIn shows ${userConfig.userName} has mutual connections with ${mutualConnections.join(' and ')}. List each by name explicitly and suggest how to use them as a warm opener (e.g. "You and I are both connected to Curtis — how do you know them?").`
       : linkedinContext
-        ? `From the scraped profile above, identify any employers, schools, or groups that overlap with Dallas's network (Utah tech, Pluralsight, Adobe, Domo, SaaS space).`
-        : `Search for any public overlap between ${interviewer} and Dallas Despain's known network (Utah tech, Pluralsight alumni, Adobe, Domo, SaaS space).`;
+        ? `From the scraped profile above, identify any employers, schools, or groups that overlap with ${userConfig.userName}'s network (${userConfig.networkContext}).`
+        : `Search for any public overlap between ${interviewer} and ${userConfig.userName}'s known network (${userConfig.networkContext}).`;
 
     const resumeSection = resume
-      ? `DALLAS'S RESUME (use this to ground STAR suggestions in his actual experience):
+      ? `RESUME (use this to ground STAR suggestions in ${userConfig.userName}'s actual experience):
 ---
 ${resume}
 ---`
@@ -169,7 +170,7 @@ ${jobDescription}
 ---`
       : '';
 
-    const prompt = `You are acting as Executive Research Assistant for Dallas Despain, who is interviewing today with ${interviewer} at ${company}.
+    const prompt = `You are acting as Executive Research Assistant for ${userConfig.userName}, who is interviewing today with ${interviewer} at ${company}.
 
 ${resumeSection}
 
@@ -187,7 +188,7 @@ Produce a concise 15-minute briefing in this exact markdown structure:
 # Interview Briefing: ${interviewer} @ ${company}
 
 ## 1. The Interviewer
-- **Current role & tenure** at ${company} (note: Dallas is interviewing for an IC engineering role, not a management role — frame yourself accordingly)
+- **Current role & tenure** at ${company} (note: ${userConfig.userName} is interviewing for an IC engineering role, not a management role — frame yourself accordingly)
 - **Career highlights** — 2–3 previous roles or notable achievements
 - **Mutual connections** — ${connectionsNote}
 - **Ice-breaker topics** — 2–3 specific hooks from their actual background, not generic topics
@@ -197,34 +198,37 @@ Produce a concise 15-minute briefing in this exact markdown structure:
 - **Business model** — how they make money
 - **Recent news** — major announcements, product launches, funding, or leadership changes in the last 12 months
 
-## 3. Why Us? (3 Challenges Dallas Could Help Solve)
-Based on ${company}'s industry position, recent trajectory, Glassdoor signals${jobDescription ? ', and the job description' : ''}, name the 3 most likely pain points Dallas could address. Frame each as: "Challenge: … | Opportunity for Dallas: …"
+## 3. Why Us? (3 Challenges ${userConfig.userName} Could Help Solve)
+Based on ${company}'s industry position, recent trajectory, Glassdoor signals${jobDescription ? ', and the job description' : ''}, name the 3 most likely pain points ${userConfig.userName} could address. Frame each as: "Challenge: … | Opportunity for ${userConfig.userName}: …"
 
 ## 4. Reverse Interview Questions
 3 sophisticated, high-signal questions for ${interviewer} — tailored to their specific background and ${company}'s current trajectory. Signal strategic thinking, not just curiosity.
 
 ## 5. STAR Story Bank
-Identify the 4 most likely behavioral interview questions for this role based on the job description and challenges above. For each, provide a STAR scaffold grounded in Dallas's resume. Do NOT invent story details — provide the framework and prompt Dallas to fill in specifics.
+Identify the 4 most likely behavioral interview questions for this role based on the job description and challenges above. For each, provide a STAR scaffold grounded in ${userConfig.userName}'s resume. Do NOT invent story details — provide the framework and prompt ${userConfig.userName} to fill in specifics.
 
 Format each as:
 **Q: "[Likely behavioral question]"**
-- **Situation**: [Which role/project from Dallas's background is the best fit? Prompt him to recall a specific moment.]
-- **Task**: [What was Dallas responsible for in that situation?]
-- **Action**: [What specific steps did he take? Prompt for 2–3 concrete actions.]
-- **Result**: [What should he quantify? Suggest metrics to reach for — time saved, revenue, team size, adoption rate, etc.]
+- **Situation**: [Which role/project from ${userConfig.userName}'s background is the best fit? Prompt to recall a specific moment.]
+- **Task**: [What was ${userConfig.userName} responsible for in that situation?]
+- **Action**: [What specific steps were taken? Prompt for 2–3 concrete actions.]
+- **Result**: [What should be quantified? Suggest metrics to reach for — time saved, revenue, team size, adoption rate, etc.]
 
 ---
 *Sources: list each URL on its own line as a markdown link in the format "- [page title](https://url)". Do not leave this section empty.*
 
-Keep each section tight. Dallas has ADHD — clarity and scannability over exhaustiveness.`;
+${userConfig.communicationStyle ? `Keep each section tight. ${userConfig.communicationStyle}` : 'Keep each section tight and scannable.'}`;
 
     const result = await this.searchModel.generateContent(prompt);
     return result.response.text();
   }
 
   async ask(question: string, context: string): Promise<string> {
-    const prompt = `You are a personal assistant helping Dallas manage his family and career.
-Dallas has ADHD and needs a single, direct answer — no preamble, no bullet lists unless specifically asked.
+    const styleNote = userConfig.communicationStyle
+      ? `${userConfig.communicationStyle} Give a single, direct answer — no preamble, no bullet lists unless specifically asked.`
+      : 'Give a single, direct answer — no preamble, no bullet lists unless specifically asked.';
+    const prompt = `You are a personal assistant helping ${userConfig.userName} manage their family and career.
+${styleNote}
 When your answer refers to something from the context, preserve the citation links exactly as they appear (e.g. [[src](url)]).
 
 TASK AWARENESS: The context may include a "tasks/today.md" section listing Dallas's Todoist tasks for today and overdue items.

@@ -56,7 +56,7 @@ describe('BeeperService', () => {
     it('should format messages correctly for AI consumption', () => {
       const messages = [
         {
-          senderName: 'Jenny',
+          senderName: 'Alice',
           text: 'Need to buy shoes',
           timestamp: '2026-03-15T10:00:00Z',
           chatName: 'Co-Parenting',
@@ -64,7 +64,7 @@ describe('BeeperService', () => {
           isFromMe: false
         },
         {
-          senderName: 'Dallas',
+          senderName: 'Bob',
           text: 'OK',
           timestamp: '2026-03-15T10:05:00Z',
           chatName: 'Co-Parenting',
@@ -75,8 +75,8 @@ describe('BeeperService', () => {
 
       const output = service.formatMessagesForAI(messages);
       expect(output).toContain('--- WhatsApp Chat History');
-      expect(output).toContain('Jenny');
-      expect(output).toContain('ME (Dallas)');
+      expect(output).toContain('Alice');
+      expect(output).toContain('ME ('); // label format for isFromMe messages
       expect(output).toContain('Need to buy shoes');
       expect(output).toContain('OK');
     });
