@@ -17,6 +17,44 @@ seconds.
 | `npm run track-jobs` | Parses recruiter emails into a structured job tracker |
 | `npm run prep-interview` | Per-interviewer briefing with LinkedIn + Google Search grounding |
 
+## Sample output
+
+```
+$ npm run morning
+
+🌅 MORNING BRIEFING — Wednesday, May 13, 2026
+
+──────────────────────────────────────────────────
+  Refreshing slices…
+──────────────────────────────────────────────────
+Deriving slices from weekly-parenting-plan.md…
+Done.
+
+──────────────────────────────────────────────────
+  Syncing tasks…
+──────────────────────────────────────────────────
+[sync-tasks] Fetched 15 task(s).
+
+──────────────────────────────────────────────────
+  KIDS — top priority today
+──────────────────────────────────────────────────
+
+Confirm your daughter has completed the audition form for High School
+Musical Theatre — her vocal audition is at 2 PM today. [[src](beeper://chat/abc123)]
+This recommendation is not in Todoist.
+
+──────────────────────────────────────────────────
+  CAREER — top priority today
+──────────────────────────────────────────────────
+
+Attend your interview at Acme Corp today — it's scheduled for this
+afternoon and is your most time-sensitive opportunity this week.
+[[src](https://mail.google.com/mail/u/0/#inbox/abc456)]
+This is not explicitly in your Todoist.
+
+──────────────────────────────────────────────────
+```
+
 ## Stack
 
 - **TypeScript / Node ESM**
