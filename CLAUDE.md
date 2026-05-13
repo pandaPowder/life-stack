@@ -1,9 +1,9 @@
 # Claude Code Project Context: Life Automation
 
-This is Dallas's personal life-automation repo. It already does real work; the
-current focus is **adding a retrieval/conversation layer on top of what it
-produces**, not rewriting the existing pipeline. See `PLAN.md` for the active
-plan and `GEMINI.md` for the original architecture notes (they remain
+This is Dallas's personal life-automation repo. The retrieval/conversation layer
+is live — `npm run morning` produces a daily briefing from real data. Current
+focus is scheduling, task write-back, and reliability. See `PLAN.md` for the
+active plan and `GEMINI.md` for the original architecture notes (they remain
 authoritative for how the existing pipeline is wired together).
 
 ## How to work in this repo
@@ -72,13 +72,22 @@ follow the same convention.
 
 ## What's already here
 
-- **Working:** `src/workflows/generate-parenting-plan.ts` — Gmail + Sway/Smore
-  + Beeper + Drive context → `gemini-2.5-flash` → cited markdown plan.
-- **Scaffolded, not wired:** `src/workflows/track-job-applications.ts` — has
-  Gmail search but the AI parsing step is a TODO. This is one of the natural
-  next targets.
+- **`generate-parenting-plan.ts`** — Gmail + Sway/Smore + Beeper + Drive
+  context → `gemini-2.5-flash` → cited markdown plan. Runs weekly.
+- **`track-job-applications.ts`** — Gmail search → AI parsing → cited
+  `data/career/this-week.md` and `data/career/applications.md`.
+- **`derive-slices.ts`** — splits the weekly plan into per-kid and career
+  slices under `data/`.
+- **`sync-tasks.ts`** — fetches today/overdue Todoist tasks via
+  `@doist/todoist-api-typescript` → `data/tasks/today.md`.
+- **`morning.ts`** — orchestrates derive-slices + sync-tasks, then asks two
+  AI questions (kids priority, career priority) with full task context.
+- **`ask.ts`** — ad-hoc Q&A against the same context (`npm run ask -- "..."`).
+- **`prep-interview.ts`** — per-interviewer briefing with LinkedIn scraping
+  and Google Search grounding.
 - **Stack:** TypeScript, Node ESM, Playwright, `googleapis`,
-  `@beeper/desktop-api`, `@google/generative-ai`, Vitest, Zod.
+  `@beeper/desktop-api`, `@google/generative-ai`,
+  `@doist/todoist-api-typescript`, Vitest, Zod.
 
 ## Models and providers
 
