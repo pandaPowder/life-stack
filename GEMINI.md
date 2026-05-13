@@ -28,6 +28,13 @@ Automatically ingest school emails, scrape text from linked Microsoft Sway newsl
 *   **Citations**: Generates per-item citations mapping back to Gmail message IDs and Beeper chat IDs.
 *   **PlanFormatter**: Formats the AI-generated JSON into a cited, child-specific Markdown parenting plan.
 
+### 5. Task Sync (`src/workflows/sync-tasks.ts`)
+*   **Tool:** `@doist/todoist-api-typescript`.
+*   **Rationale:** Fetches today's and overdue tasks from Todoist, writes to `data/tasks/today.md` so the morning briefing includes task context alongside school and career data.
+
+### 6. Morning Briefing (`src/workflows/morning.ts`)
+*   Orchestrates `derive-slices` + `sync-tasks`, then fires two Gemini questions (kids priority, career priority) with full context and prints cited answers.
+
 ## 🔄 Workflow
 1.  **Authorize:** Unified Google OAuth handshake.
 2.  **Context**: Fetch "AI Context" from the designated Drive folder.
@@ -36,6 +43,7 @@ Automatically ingest school emails, scrape text from linked Microsoft Sway newsl
 5.  **Resolve & Scrape**: Extract text from newsletters and SendGrid links.
 6.  **Process**: Synthesize with Gemini 2.5 using unified context (Gmail, Sway, WhatsApp, Drive).
 7.  **Output**: Generate a cited, child-specific parenting plan in Markdown format via `PlanFormatter`.
+8.  **Daily driver**: `npm run morning` derives slices, syncs Todoist tasks, and asks Gemini the two daily priority questions.
 
 ## 🛠️ Development Notes
 *   **ES Modules:** The project uses `"type": "module"` in `package.json`.

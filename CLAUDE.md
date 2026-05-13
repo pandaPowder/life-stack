@@ -1,24 +1,23 @@
 # Claude Code Project Context: Life Automation
 
-This is Dallas's personal life-automation repo. The retrieval/conversation layer
+This is a personal life-automation repo. The retrieval/conversation layer
 is live — `npm run morning` produces a daily briefing from real data. Current
-focus is scheduling, task write-back, and reliability. See `PLAN.md` for the
-active plan and `GEMINI.md` for the original architecture notes (they remain
-authoritative for how the existing pipeline is wired together).
+focus is scheduling, task write-back, and reliability. See `GEMINI.md` for the
+original architecture notes (they remain authoritative for how the existing
+pipeline is wired together).
 
 ## How to work in this repo
 
 **Read these first, in order:**
-1. `PLAN.md` — the current plan and the single next thing to ship.
-2. `GEMINI.md` — architecture of the existing parenting-plan pipeline.
-3. `package.json` and `src/workflows/` to see what's actually wired up.
+1. `GEMINI.md` — architecture of the existing parenting-plan pipeline.
+2. `package.json` and `src/workflows/` to see what's actually wired up.
 
 **For personalized advice, also read `.agents/`:**
 
-- `.agents/life-context.md` — Dallas's foundational context (working
+- `.agents/life-context.md` — owner's foundational context (working
   style, priorities, communication preferences). Read this before giving
-  advice that depends on who Dallas is, what he's optimizing for, or how
-  he wants to be talked to.
+  advice that depends on who the owner is, what they're optimizing for, or
+  how they want to be talked to.
 - `.agents/people/[name].md` — per-person profiles (kids, etc.). Read the
   relevant one when a specific person comes up by name.
 - `.agents/career-context.md` — job-search state. Read when the topic is
@@ -33,7 +32,7 @@ don't write it.
 **Compatibility symlinks:** `.agents/em-context.md` is a symlink to
 `life-context.md`, and `.agents/reports/` is a symlink to `people/`.
 These exist so any installed skill expecting the manager.dev convention
-(e.g., `manager-dot-dev/manager-skills/skills/managing-up`) finds Dallas's
+(e.g., `manager-dot-dev/manager-skills/skills/managing-up`) finds the owner's
 context without further setup. Keep both forms working when adding new
 files.
 
@@ -63,8 +62,7 @@ follow the same convention.
   pipeline produce a smaller, more queryable output" vs. "add a clever
   abstraction," pick the first. Visible movement matters more than elegance.
 - **One next thing at a time.** Surface the single next action, finish it,
-  then pick the next. Avoid emitting long multi-step roadmaps mid-task — those
-  belong in `PLAN.md`.
+  then pick the next. Avoid emitting long multi-step roadmaps mid-task.
 - **Cite sources in generated content.** The existing parenting plan cites
   back to Gmail message IDs and Beeper chat IDs. New retrieval features should
   preserve this: never produce a recommendation without showing where it came

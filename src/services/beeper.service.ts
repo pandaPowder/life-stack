@@ -123,12 +123,12 @@ export class BeeperService {
   formatMessagesForAI(messages: BeeperMessage[]): string {
     if (messages.length === 0) return '';
 
-    let output = '\n--- WhatsApp Chat History (Last 7 Days) ---\n';
+    let output = '\n--- Messaging History (Last 7 Days) ---\n';
     messages.forEach(m => {
       const senderLabel = m.isFromMe ? `ME (${userConfig.userName})` : m.senderName;
       output += `[${m.chatName}] ${senderLabel} (${new Date(m.timestamp).toLocaleString()}): ${m.text}\n`;
     });
-    output += '--- End of WhatsApp History ---\n';
+    output += '--- End of Messaging History ---\n';
     
     return output;
   }

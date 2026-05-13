@@ -21,3 +21,9 @@ inputs/
 
 # Personal config (names, communication style) — copy from user.config.example.json
 user.config.json
+
+# Personal planning artifact — local only
+PLAN.md
+
+# Claude Code internal files
+skills-lock.json

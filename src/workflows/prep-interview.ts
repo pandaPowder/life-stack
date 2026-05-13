@@ -34,15 +34,15 @@ function parseArgs(args: string[]) {
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--linkedin' && args[i + 1]) {
-      opts.linkedinUrl = args[++i];
+      opts.linkedinUrl = args[++i]!;
     } else if (args[i] === '--context' && args[i + 1]) {
-      opts.linkedinContext = args[++i];
+      opts.linkedinContext = args[++i]!;
     } else if (args[i] === '--connections' && args[i + 1]) {
-      opts.mutualConnections = args[++i].split(',').map(s => s.trim());
+      opts.mutualConnections = args[++i]!.split(',').map(s => s.trim());
     } else if (args[i] === '--resume' && args[i + 1]) {
-      opts.resume = args[++i]; // treated as a file path; read below
+      opts.resume = args[++i]!; // treated as a file path; read below
     } else {
-      positional.push(args[i]);
+      positional.push(args[i]!);
     }
   }
 
@@ -77,7 +77,7 @@ async function main() {
     process.exit(1);
   }
 
-  const [interviewer, company] = positional;
+  const [interviewer, company] = positional as [string, string];
   console.log(`\nResearching ${interviewer} @ ${company}...\n`);
 
   // Resolve resume: explicit flag, then default location
@@ -92,7 +92,7 @@ async function main() {
       console.log(`[Resume] Loaded from ${resumePath}`);
     } catch (err) {
       console.warn(`[Resume] Could not read file: ${(err as Error).message}`);
-      opts.resume = undefined;
+      delete opts.resume;
     }
   } else {
     console.log('[Resume] No resume found — run with --resume <path> or place file at inputs/career/resume.docx');
@@ -100,7 +100,8 @@ async function main() {
 
   // Fetch job description from Gmail
   console.log('[Gmail] Searching for job-related emails...');
-  opts.jobDescription = await fetchJobDescriptionFromGmail(company);
+  const jd = await fetchJobDescriptionFromGmail(company);
+  if (jd) opts.jobDescription = jd;
   if (opts.jobDescription) {
     console.log('[Gmail] Job emails found — will extract JD for context.');
   } else {
@@ -122,7 +123,7 @@ async function main() {
   if (opts.linkedinContext && !opts.mutualConnections?.length) {
     const match = opts.linkedinContext.match(/([A-Z][a-z]+(?:,\s*[A-Z][a-z]+)*)\s+and\s+(?:\d+\s+other\s+)?mutual connection/);
     if (match) {
-      opts.mutualConnections = match[1].split(/,\s*/).map(s => s.trim()).filter(Boolean);
+      opts.mutualConnections = match[1]!.split(/,\s*/).map(s => s.trim()).filter(Boolean);
       console.log(`[LinkedIn] Mutual connections found: ${opts.mutualConnections.join(', ')}`);
     }
   }

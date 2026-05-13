@@ -74,7 +74,7 @@ describe('BeeperService', () => {
       ];
 
       const output = service.formatMessagesForAI(messages);
-      expect(output).toContain('--- WhatsApp Chat History');
+      expect(output).toContain('--- Messaging History');
       expect(output).toContain('Alice');
       expect(output).toContain('ME ('); // label format for isFromMe messages
       expect(output).toContain('Need to buy shoes');

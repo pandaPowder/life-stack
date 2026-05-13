@@ -38,7 +38,7 @@ describe('PlanSlicer', () => {
     it('excludes "None found." items', () => {
       const md = `# PLAN\n\n## 📚 HOMEWORK SUPPORT\nNone found.\n`;
       const plan = PlanSlicer.parse(md);
-      expect(plan.sections[0].items).toHaveLength(0);
+      expect(plan.sections[0]!.items).toHaveLength(0);
     });
 
     it('preserves citations in items', () => {

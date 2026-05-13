@@ -4,8 +4,8 @@ import { join } from 'path';
 export interface UserConfig {
   /** Your name, used in AI prompt context */
   userName: string;
-  /** Co-parent's name, used to filter WhatsApp message direction */
-  coparentName: string;
+  /** Spouse / partner / co-parent's name, used to filter messaging direction */
+  partnerName: string;
   /** Children's first names, used to slice the parenting plan */
   children: string[];
   /** Brief description of your professional network (former employers, industry) */
@@ -22,7 +22,7 @@ function loadConfig(): UserConfig {
   }
   return {
     userName: process.env.USER_NAME ?? 'the user',
-    coparentName: process.env.COPARENT_NAME ?? 'co-parent',
+    partnerName: process.env.PARTNER_NAME ?? process.env.COPARENT_NAME ?? 'partner',
     children: process.env.CHILDREN?.split(',').map(s => s.trim()) ?? [],
     networkContext: process.env.NETWORK_CONTEXT ?? '',
     communicationStyle: '',

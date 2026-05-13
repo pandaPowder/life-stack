@@ -21,14 +21,14 @@ describe('buildContext', () => {
     const dataDir = path.join(dir, 'data');
 
     await writeFile(path.join(dataDir, 'today.md'), '# TODAY\n- Urgent item');
-    await writeFile(path.join(dataDir, 'kids', 'graham', 'this-week.md'), '# GRAHAM\n- Graham task');
-    await writeFile(path.join(dataDir, 'kids', 'nora', 'this-week.md'), '# NORA\n- Nora task');
+    await writeFile(path.join(dataDir, 'kids', 'child1', 'this-week.md'), '# CHILD1\n- Child1 task');
+    await writeFile(path.join(dataDir, 'kids', 'child2', 'this-week.md'), '# CHILD2\n- Child2 task');
 
     const ctx = await buildContext(dataDir, path.join(dir, 'weekly.md'));
 
     expect(ctx).toContain('Urgent item');
-    expect(ctx).toContain('Graham task');
-    expect(ctx).toContain('Nora task');
+    expect(ctx).toContain('Child1 task');
+    expect(ctx).toContain('Child2 task');
 
     await fs.rm(dir, { recursive: true });
   });

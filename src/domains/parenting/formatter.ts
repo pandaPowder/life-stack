@@ -13,8 +13,8 @@ export class PlanFormatter {
   static getCitations(sources: string[] | undefined, sourceMap: Map<string, SourceLink>): string {
     if (!sources || sources.length === 0) return '';
     const links = sources.map(s => {
-      // Try exact match, then try removing "WhatsApp Chat History" prefix if AI added it
-      const cleanSource = s.replace(/^WhatsApp Chat History \((.*)\)$/, '$1').trim();
+      // Try exact match, then try stripping legacy AI-generated prefixes
+      const cleanSource = s.replace(/^(?:WhatsApp Chat History|Messaging History) \((.*)\)$/, '$1').trim();
       const link = sourceMap.get(s) || sourceMap.get(cleanSource);
       
       if (link && link.url) {

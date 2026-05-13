@@ -26,18 +26,18 @@ export class AIService {
   }
 
   /**
-   * Summarizes the raw school email text, Sway content, and WhatsApp logs.
+   * Summarizes the raw school email text, Sway content, and messaging logs.
    */
   async generateParentingPlan(rawText: string, context: string = ''): Promise<ParentingPlan> {
     const prompt = `
-      You are an expert parenting assistant. Below is text extracted from school emails, newsletters, and WhatsApp chat history between parents.
+      You are an expert parenting assistant. Below is text extracted from school emails, newsletters, and family messaging history.
       Analyze the text and extract all important information for my children's weekly parenting plan.
       
       IMPORTANT RECIPIENT CONTEXT:
       - This report is for ME (${userConfig.userName}).
-      - In the WhatsApp logs, messages from "ME (${userConfig.userName})" are requests or info I have already sent.
+      - In the messaging logs, messages from "ME (${userConfig.userName})" are requests or info I have already sent.
       - DO NOT list requests I made to others as "Homework Support" or "Purchases Needed" for myself.
-      - DO focus on requests or info sent TO me by my co-parent (${userConfig.coparentName}) or my kids.
+      - DO focus on requests or info sent TO me by my partner/co-parent (${userConfig.partnerName}) or my kids.
       - Use my own messages ("ME (${userConfig.userName})") only as context to understand agreements or confirmed plans.
       
       PERSONAL CONTEXT (Use this to prioritize and assign tasks):
@@ -50,10 +50,10 @@ export class AIService {
       - Items that need to be purchased (supplies, clothes, special equipment).
       - Upcoming school activities, deadlines, or events.
       - General important school announcements or reminders.
-      - Logistical changes, parent agreements, or requests from the WhatsApp history.
+      - Logistical changes, parent agreements, or requests from the messaging history.
       
       CITATIONS:
-      For every item you find, include a "sources" array containing the exact email subjects or WhatsApp chat names where the information was found.
+      For every item you find, include a "sources" array containing the exact email subjects or chat names where the information was found.
       
       Return the data in the following JSON structure:
       {
@@ -63,7 +63,7 @@ export class AIService {
         "announcements": [{ "text": string, "sources": string[] }]
       }
       
-      RAW CONTENT (School Communications & WhatsApp):
+      RAW CONTENT (School Communications & Messaging):
       ---
       ${rawText}
       ---
@@ -231,7 +231,7 @@ ${userConfig.communicationStyle ? `Keep each section tight. ${userConfig.communi
 ${styleNote}
 When your answer refers to something from the context, preserve the citation links exactly as they appear (e.g. [[src](url)]).
 
-TASK AWARENESS: The context may include a "tasks/today.md" section listing Dallas's Todoist tasks for today and overdue items.
+TASK AWARENESS: The context may include a "tasks/today.md" section listing your Todoist tasks for today and overdue items.
 - If your recommendation is already captured as a Todoist task, say so explicitly and include the task link.
 - If your recommendation is NOT in Todoist, say so — it's a signal it should be added.
 - Do not re-surface tasks that are already captured unless they are the highest-priority action.

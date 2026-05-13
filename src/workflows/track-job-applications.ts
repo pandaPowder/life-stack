@@ -32,7 +32,7 @@ const GMAIL_QUERY = [
 function parseDaysArg(defaultDays = 30): number {
   const idx = process.argv.indexOf('--days');
   if (idx !== -1 && process.argv[idx + 1]) {
-    const parsed = parseInt(process.argv[idx + 1], 10);
+    const parsed = parseInt(process.argv[idx + 1]!, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
   }
   return defaultDays;

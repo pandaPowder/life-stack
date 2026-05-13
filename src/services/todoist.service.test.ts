@@ -20,7 +20,7 @@ const MOCK_API_TASKS = [
   },
   {
     id: '2',
-    content: 'Review Nora school schedule',
+    content: 'Review child school schedule',
     priority: 2,
     due: null,
   },
@@ -49,7 +49,7 @@ describe('TodoistService.getTasks', () => {
   it('maps null due to undefined', async () => {
     const service = new TodoistService('test-token');
     const tasks = await service.getTasks();
-    expect(tasks[1].due).toBeUndefined();
+    expect(tasks[1]!.due).toBeUndefined();
   });
 
   it('uses default filter when none provided', async () => {

@@ -5,7 +5,7 @@ import type { SourceLink } from './formatter.js';
 describe('PlanFormatter', () => {
   const sourceMap = new Map<string, SourceLink>([
     ['Email 1', { title: 'Email 1', url: 'https://mail.google.com/1', type: 'gmail' }],
-    ['Co-Parenting', { title: 'WhatsApp: Co-Parenting', url: 'beeper://chat/1', type: 'whatsapp' }]
+    ['Family Chat', { title: 'Chat: Family Chat', url: 'beeper://chat/1', type: 'whatsapp' }]
   ]);
 
   describe('getCitations', () => {
@@ -20,8 +20,8 @@ describe('PlanFormatter', () => {
       expect(citation).toBe(' [[src](https://mail.google.com/1)]');
     });
 
-    it('should handle WhatsApp sources with prefix cleanup', () => {
-      const sources = ['WhatsApp Chat History (Co-Parenting)'];
+    it('should handle legacy messaging prefix cleanup', () => {
+      const sources = ['WhatsApp Chat History (Family Chat)'];
       const citation = PlanFormatter.getCitations(sources, sourceMap);
       expect(citation).toBe(' [[src](beeper://chat/1)]');
     });
