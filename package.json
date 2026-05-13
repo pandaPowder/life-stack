@@ -9,6 +9,7 @@
     "dev": "tsx watch src/workflows/generate-parenting-plan.ts",
     "derive-slices": "tsx src/workflows/derive-slices.ts",
     "ask": "tsx src/workflows/ask.ts",
+    "sync-tasks": "tsx src/workflows/sync-tasks.ts",
     "track-jobs": "tsx src/workflows/track-job-applications.ts",
     "morning": "tsx src/workflows/morning.ts",
     "prep-interview": "tsx src/workflows/prep-interview.ts"
@@ -19,6 +20,7 @@
   "type": "module",
   "dependencies": {
     "@beeper/desktop-api": "^4.7.0",
+    "@doist/todoist-api-typescript": "^7.10.0",
     "@google-cloud/local-auth": "^3.0.1",
     "@google/generative-ai": "^0.24.1",
     "@modelcontextprotocol/sdk": "^1.27.1",

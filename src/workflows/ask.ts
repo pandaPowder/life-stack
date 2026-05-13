@@ -12,6 +12,7 @@ const PLAN_FILE = 'weekly-parenting-plan.md';
 export async function buildContext(dataDir: string, planFile: string): Promise<string> {
   const candidates = [
     path.join(dataDir, 'today.md'),
+    path.join(dataDir, 'tasks', 'today.md'),
     path.join(dataDir, 'kids', 'graham', 'this-week.md'),
     path.join(dataDir, 'kids', 'nora', 'this-week.md'),
     path.join(dataDir, 'kids', 'ansel', 'this-week.md'),

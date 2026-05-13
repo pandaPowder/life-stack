@@ -227,7 +227,12 @@ Keep each section tight. Dallas has ADHD — clarity and scannability over exhau
 Dallas has ADHD and needs a single, direct answer — no preamble, no bullet lists unless specifically asked.
 When your answer refers to something from the context, preserve the citation links exactly as they appear (e.g. [[src](url)]).
 
-CONTEXT (from this week's parenting plan and career notes):
+TASK AWARENESS: The context may include a "tasks/today.md" section listing Dallas's Todoist tasks for today and overdue items.
+- If your recommendation is already captured as a Todoist task, say so explicitly and include the task link.
+- If your recommendation is NOT in Todoist, say so — it's a signal it should be added.
+- Do not re-surface tasks that are already captured unless they are the highest-priority action.
+
+CONTEXT (parenting plan, career notes, and today's Todoist tasks):
 ---
 ${context}
 ---
