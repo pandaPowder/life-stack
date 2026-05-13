@@ -87,6 +87,32 @@ follow the same convention.
   `@beeper/desktop-api`, `@google/generative-ai`,
   `@doist/todoist-api-typescript`, Vitest, Zod.
 
+## Serena (code intelligence)
+
+Serena is an MCP server that provides language-server-backed code intelligence
+(go-to-definition, find-references, symbol search, diagnostics). It is faster
+and more precise than grep for navigating this codebase.
+
+**Before any coding task**, call `mcp__serena__initial_instructions` to load
+Serena's usage manual. This is not optional — Serena will not work correctly
+without it.
+
+**In worktrees** — a `SessionStart` hook in `~/.claude/settings.json`
+automatically provisions `.serena/` in each new worktree by:
+- Copying `.serena/cache` from the main repo (avoids full re-index)
+- Symlinking `project.yml`, `project.local.yml`, and `memories/` from the
+  main repo so config and accumulated memories are shared
+
+If you somehow end up in a worktree without `.serena/`, run:
+```bash
+MAIN=$(git rev-parse --git-common-dir | sed 's|/.git||')
+mkdir -p .serena
+cp -r $MAIN/.serena/cache .serena/cache
+ln -s $MAIN/.serena/project.yml .serena/project.yml
+ln -s $MAIN/.serena/project.local.yml .serena/project.local.yml
+ln -s $MAIN/.serena/memories .serena/memories
+```
+
 ## Models and providers
 
 The existing pipeline uses `gemini-2.5-flash` via `@google/generative-ai`.

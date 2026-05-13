@@ -27,3 +27,6 @@ PLAN.md
 
 # Claude Code internal files
 skills-lock.json
+
+# Serena language-server index (auto-provisioned per worktree)
+.serena/
