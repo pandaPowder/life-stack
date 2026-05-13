@@ -1,100 +1,82 @@
-# Active Plan: Career Tracker QA + Todoist Integration
+# Active Plan: Scheduling + Task Write-Back
 
-**Status:** task 1 done, task 2 next
+**Status:** ready to start
 **Last updated:** 2026-05-13
 
-## Background
+## What's done
 
-The retrieval layer is live and `npm run morning` is producing useful,
-cited answers. Two gaps surfaced immediately on first real use:
+The retrieval layer is fully live:
 
-1. **Career tracker misses direct recruiter outreach.** WGU's Michael
-   Maxfield emailed about a TPM role — subject "Western Governors
-   University - Call Availability", from `michael.maxfield@wgu.edu`.
-   The Gmail query relied on known ATS domains (`greenhouse.io`,
-   `lever.co`, etc.) and a narrow set of subject keywords. Neither
-   matched WGU. Dallas has already replied and shared his cell; this is
-   an active pipeline entry that the tracker didn't know about.
-
-2. **No Todoist integration.** Dallas tracks all action items in
-   Todoist. The morning briefing currently has no visibility into what's
-   already captured there, so it may surface things that are already
-   tasks, or miss items that are overdue. Connecting Todoist makes the
-   briefing aware of the full picture.
+- `npm run morning` runs `derive-slices` → `sync-tasks` → two AI questions (kids + career)
+- Career tracker catches direct recruiter outreach (not just ATS domains)
+- Todoist tasks are fetched via the official SDK and injected into AI context
+- AI prompt is task-aware: calls out what's already captured vs. what needs to be added
+- 63 tests passing
 
 ## Guiding principle
 
-Same as last plan: additive, never destructive. Existing workflows keep
-running unchanged. New capabilities layer on top.
+Same as always: additive, never destructive. Existing workflows keep running unchanged.
 
 ## Tasks (do in order, ship after each)
 
-### ✅ 1. Fix career tracker Gmail query
+### 1. Schedule `morning` and `track-jobs` as cron jobs
 
-Broadened the subject clause in `GMAIL_QUERY` in
-`src/workflows/track-job-applications.ts`:
+Both workflows are stable enough to run unattended. The right cadence:
 
-- `subject:availability` — catches "Call Availability", etc.
-- `subject:schedule` — catches "Schedule a call / interview"
-- `subject:"your profile"` — LinkedIn InMail forwards
-- `subject:"quick call"` / `subject:"quick chat"` — recruiter cold outreach
+- **`morning`**: daily at 7:00 AM — the whole point is to have it waiting when Dallas wakes up
+- **`track-jobs`**: every weekday at 6:50 AM — runs before `morning` so career context is fresh
 
-Also parameterized the lookback window: `fetchRecentSchoolEmails` now
-accepts `lookbackDays` (default 45, preserving parenting-plan behavior).
-Career workflow defaults to 30 days and accepts a `--days` flag.
+**Implementation:** use the existing `mcp__scheduled-tasks` infrastructure that's already in this repo's
+Claude Code setup, or write a launchd plist (macOS). Prefer launchd so it survives Claude Code not being
+open; fall back to a cron entry if launchd is too brittle.
 
-**Verified:** `npm run track-jobs` shows WGU — Technical Program Manager
-with status "interviewing". 53/53 tests pass.
+Output should land in a log file (`logs/morning.log`, `logs/track-jobs.log`) so failures are visible
+without needing to watch a terminal.
 
-**Loose end (non-blocking):** Gmail API caps results at 100 messages per
-call. With the broadened query, the 30-day window regularly hits this
-limit. If active applications start getting dropped, add pagination to
-`fetchRecentSchoolEmails` — separate task, not urgent now.
+**Verification:** let it run once unattended, confirm log exists and output is correct.
 
-### 2. Add Todoist integration
+### 2. Task write-back from morning briefing
 
-Todoist has a REST API (`https://api.todoist.com/rest/v2/`). Auth is a
-bearer token stored in `.env` as `TODOIST_API_TOKEN`.
+`createTask()` is already implemented in `TodoistService` but nothing calls it yet.
 
-**New service:** `src/services/todoist.service.ts`
-- `getTasks(filter?: string): Promise<TodoistTask[]>` — fetches tasks
-  matching a filter (default: `today | overdue`)
-- `createTask(content: string, dueString?: string): Promise<void>` —
-  creates a task (used later, not in first cut)
+The morning briefing currently says "this isn't in Todoist — it should be added." The next step is to
+actually add it, either:
 
-**New type:** `src/domains/tasks/types.ts`
-- `TodoistTask` — `{ id, content, due?, priority, url }`
+- **Option A (interactive):** after the two AI answers, print any suggested tasks and prompt
+  `Add to Todoist? [y/N]` for each. Simple, explicit, no surprises.
+- **Option B (automatic):** if the AI identifies a clear next action not already in Todoist, create it
+  silently and print a confirmation line.
 
-**New output:** `data/tasks/today.md`
-- Written by a new `src/workflows/sync-tasks.ts` workflow
-- Format: grouped by priority, each item links to the task in Todoist
-  (`https://todoist.com/app/task/{id}`)
-- Included automatically in `buildContext` (add to the candidates list
-  in `src/workflows/ask.ts`)
+Prefer Option A first — get a feel for what the AI actually suggests before automating it.
 
-**Wire into morning:** `morning.ts` runs `sync-tasks` after
-`derive-slices`, before the two AI questions. This gives the AI full
-task context so it can say "this is already in your Todoist — here's
-the link" rather than re-surfacing captured items.
+**New flow in `morning.ts`:**
+1. Parse the career and kids answers for suggested actions (simple heuristic: lines starting with
+   "You should" / "Consider" / "Follow up" — or ask the AI to return structured action items)
+2. For each: check if a similar task already exists in the fetched task list (fuzzy string match on content)
+3. If not found, prompt and optionally create
 
-**Test:** Vitest smoke test for `TodoistService` with a mocked `fetch`,
-and a formatter test for the markdown output.
+**Verification:** run `npm run morning`, confirm at least one suggested task gets offered, accept it,
+verify it appears in Todoist.
 
-**Verification:** Run `npm run morning` and confirm task context appears
-in the briefing and the career answer references WGU.
+### 3. Paginate Gmail results in career tracker
+
+The Gmail API caps at 100 messages per call. With the broadened query the 30-day window regularly
+hits this limit; active applications could be silently dropped.
+
+`fetchRecentSchoolEmails` in `gmail.service.ts` needs a pagination loop using `nextPageToken`.
+Cap total results at 500 to avoid runaway API usage.
+
+**Verification:** run `npm run track-jobs --days 60` and confirm total fetched exceeds 100 if the
+inbox has that many matching emails.
 
 ## Explicitly out of scope
 
-- Writing tasks back to Todoist from the morning briefing (useful later,
-  not now — get the read path right first)
-- Scheduling `morning.ts` as a cron job (can do after a week of manual
-  use to confirm the output is reliable)
-- Paginating the Gmail results cap (non-blocking loose end above)
 - Modifying `generate-parenting-plan.ts` or `PlanFormatter`
+- Multi-question morning sessions (current two-question format is working well)
+- Todoist project/label filtering (the `today | overdue` filter is the right scope for now)
 
-## Definition of done
+## Definition of done (full plan)
 
-- `npm run morning` pulls in Todoist tasks and the career answer is
-  aware of what's already captured
-- All existing tests still pass
-- No new workflow breaks the existing parenting-plan pipeline
+- `morning` runs at 7 AM without any terminal open
+- Tasks suggested by the AI briefing can be added to Todoist in one keypress
+- Career tracker never silently drops emails due to the 100-result cap

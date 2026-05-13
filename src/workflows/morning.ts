@@ -3,6 +3,7 @@ dotenv.config({ override: true });
 import * as path from 'path';
 import { AIService } from '../services/ai.service.js';
 import { run as deriveSlices } from './derive-slices.js';
+import { run as syncTasks } from './sync-tasks.js';
 import { buildContext } from './ask.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -36,16 +37,20 @@ async function main() {
   header('Refreshing slices…');
   await deriveSlices();
 
-  // Step 2: load context once, share across both questions
+  // Step 2: pull today's Todoist tasks
+  header('Syncing tasks…');
+  await syncTasks();
+
+  // Step 3: load context once, share across both questions
   const context = await buildContext(DATA_DIR, PLAN_FILE);
   const ai = new AIService(apiKey);
 
-  // Step 3: kids
+  // Step 4: kids
   header('KIDS — top priority today');
   const kidsAnswer = await ai.ask(KIDS_QUESTION, context);
   console.log('\n' + kidsAnswer);
 
-  // Step 4: career
+  // Step 5: career
   header('CAREER — top priority today');
   const careerAnswer = await ai.ask(CAREER_QUESTION, context);
   console.log('\n' + careerAnswer);
