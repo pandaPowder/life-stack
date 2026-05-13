@@ -15,3 +15,6 @@ credentials.json
 # Generated files
 weekly-parenting-plan.md
 data/
+
+# Personal inputs (resume, JDs, notes) — not for sharing
+inputs/

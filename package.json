@@ -10,7 +10,8 @@
     "derive-slices": "tsx src/workflows/derive-slices.ts",
     "ask": "tsx src/workflows/ask.ts",
     "track-jobs": "tsx src/workflows/track-job-applications.ts",
-    "morning": "tsx src/workflows/morning.ts"
+    "morning": "tsx src/workflows/morning.ts",
+    "prep-interview": "tsx src/workflows/prep-interview.ts"
   },
   "keywords": [],
   "author": "",

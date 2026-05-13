@@ -7,6 +7,7 @@ export class AIService {
   private genAI: GoogleGenerativeAI;
   private model: any;
   private textModel: any;
+  private searchModel: any;
 
   constructor(apiKey: string) {
     this.genAI = new GoogleGenerativeAI(apiKey);
@@ -17,6 +18,10 @@ export class AIService {
       }
     });
     this.textModel = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    this.searchModel = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      tools: [{ googleSearch: {} } as any],
+    });
   }
 
   /**
@@ -119,6 +124,102 @@ ${emailsText}
     const parsed = JobApplicationsResponseSchema.parse(raw);
     console.log(`[AI] Parsed ${parsed.applications.length} job applications.`);
     return parsed.applications;
+  }
+
+  async prepInterview(
+    interviewer: string,
+    company: string,
+    opts: {
+      linkedinUrl?: string;
+      linkedinContext?: string;
+      mutualConnections?: string[];
+      resume?: string;
+      jobDescription?: string;
+    } = {},
+  ): Promise<string> {
+    const { linkedinUrl, linkedinContext, mutualConnections, resume, jobDescription } = opts;
+
+    const interviewerSection = linkedinContext
+      ? `INTERVIEWER PROFILE (scraped from LinkedIn — use this as the authoritative source for their role and career history):
+---
+${linkedinContext}
+---
+Also search: "${interviewer}" "${company}" to find any articles, talks, blog posts, conference appearances, or press mentions that aren't on their LinkedIn profile.`
+      : linkedinUrl
+        ? `Search for the interviewer's LinkedIn profile at ${linkedinUrl} and any press mentions or bios for "${interviewer}" "${company}".`
+        : `Search: "${interviewer}" "${company}" site:linkedin.com, then check ${company}'s team/leadership page as a fallback.`;
+
+    const connectionsNote = mutualConnections && mutualConnections.length > 0
+      ? `LinkedIn shows Dallas has mutual connections with ${mutualConnections.join(' and ')}. List each by name explicitly and suggest how to use them as a warm opener (e.g. "You and I are both connected to Curtis — how do you know them?").`
+      : linkedinContext
+        ? `From the scraped profile above, identify any employers, schools, or groups that overlap with Dallas's network (Utah tech, Pluralsight, Adobe, Domo, SaaS space).`
+        : `Search for any public overlap between ${interviewer} and Dallas Despain's known network (Utah tech, Pluralsight alumni, Adobe, Domo, SaaS space).`;
+
+    const resumeSection = resume
+      ? `DALLAS'S RESUME (use this to ground STAR suggestions in his actual experience):
+---
+${resume}
+---`
+      : '';
+
+    const jdSection = jobDescription
+      ? `JOB DESCRIPTION (extracted from emails — use this to identify key requirements and tailor everything):
+---
+${jobDescription}
+---`
+      : '';
+
+    const prompt = `You are acting as Executive Research Assistant for Dallas Despain, who is interviewing today with ${interviewer} at ${company}.
+
+${resumeSection}
+
+${jdSection}
+
+${interviewerSection}
+
+ADDITIONAL RESEARCH — run these searches:
+1. Fetch ${company}'s website (about/team page) for positioning and leadership.
+2. Search: ${company} news 2024 2025 — announcements, funding, product launches.
+3. Search: ${company} Glassdoor reviews — culture and pain-point signals.
+
+Produce a concise 15-minute briefing in this exact markdown structure:
+
+# Interview Briefing: ${interviewer} @ ${company}
+
+## 1. The Interviewer
+- **Current role & tenure** at ${company} (note: Dallas is interviewing for an IC engineering role, not a management role — frame yourself accordingly)
+- **Career highlights** — 2–3 previous roles or notable achievements
+- **Mutual connections** — ${connectionsNote}
+- **Ice-breaker topics** — 2–3 specific hooks from their actual background, not generic topics
+
+## 2. The Company
+- **Mission** (one sentence)
+- **Business model** — how they make money
+- **Recent news** — major announcements, product launches, funding, or leadership changes in the last 12 months
+
+## 3. Why Us? (3 Challenges Dallas Could Help Solve)
+Based on ${company}'s industry position, recent trajectory, Glassdoor signals${jobDescription ? ', and the job description' : ''}, name the 3 most likely pain points Dallas could address. Frame each as: "Challenge: … | Opportunity for Dallas: …"
+
+## 4. Reverse Interview Questions
+3 sophisticated, high-signal questions for ${interviewer} — tailored to their specific background and ${company}'s current trajectory. Signal strategic thinking, not just curiosity.
+
+## 5. STAR Story Bank
+Identify the 4 most likely behavioral interview questions for this role based on the job description and challenges above. For each, provide a STAR scaffold grounded in Dallas's resume. Do NOT invent story details — provide the framework and prompt Dallas to fill in specifics.
+
+Format each as:
+**Q: "[Likely behavioral question]"**
+- **Situation**: [Which role/project from Dallas's background is the best fit? Prompt him to recall a specific moment.]
+- **Task**: [What was Dallas responsible for in that situation?]
+- **Action**: [What specific steps did he take? Prompt for 2–3 concrete actions.]
+- **Result**: [What should he quantify? Suggest metrics to reach for — time saved, revenue, team size, adoption rate, etc.]
+
+---
+*Sources: list each URL on its own line as a markdown link in the format "- [page title](https://url)". Do not leave this section empty.*
+
+Keep each section tight. Dallas has ADHD — clarity and scannability over exhaustiveness.`;
+
+    const result = await this.searchModel.generateContent(prompt);
+    return result.response.text();
   }
 
   async ask(question: string, context: string): Promise<string> {
