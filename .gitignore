@@ -9,11 +9,13 @@ credentials.json
 # Claude Code internal tooling (worktrees, etc.)
 .claude/
 
-# Local agent context — personal, not for sharing
+# Agent tooling (skills, configs) — not for sharing
 .agents/
 
+# Personal context (life, kids, career) — lives in its own private git repo
+.context/
+
 # Generated files
-weekly-parenting-plan.md
 data/
 
 # Personal inputs (resume, JDs, notes) — not for sharing

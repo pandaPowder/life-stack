@@ -111,8 +111,8 @@ async function run() {
     const plan = await ai.generateParentingPlan(consolidatedText, context);
 
     const markdown = PlanFormatter.formatMarkdown(plan, sourceMap);
-    await PlanFormatter.writeToFile('weekly-parenting-plan.md', markdown);
-    console.log('\n[SUCCESS] Plan written to weekly-parenting-plan.md');
+    await PlanFormatter.writeToFile('data/parenting/weekly-plan.md', markdown);
+    console.log('\n[SUCCESS] Plan written to data/parenting/weekly-plan.md');
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');

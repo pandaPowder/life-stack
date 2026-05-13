@@ -12,31 +12,32 @@ pipeline is wired together).
 1. `GEMINI.md` — architecture of the existing parenting-plan pipeline.
 2. `package.json` and `src/workflows/` to see what's actually wired up.
 
-**For personalized advice, also read `.agents/`:**
+**For personalized advice, also read `.context/`:**
 
-- `.agents/life-context.md` — owner's foundational context (working
+- `.context/life-context.md` — owner's foundational context (working
   style, priorities, communication preferences). Read this before giving
   advice that depends on who the owner is, what they're optimizing for, or
   how they want to be talked to.
-- `.agents/people/[name].md` — per-person profiles (kids, etc.). Read the
+- `.context/people/[name].md` — per-person profiles (kids, etc.). Read the
   relevant one when a specific person comes up by name.
-- `.agents/career-context.md` — job-search state. Read when the topic is
+- `.context/career-context.md` — job-search state. Read when the topic is
   applications, interviews, or skill gaps.
 
 These files are the shared memory layer (modeled on `em-context` from
 manager.dev's manager-skills). The auto-update rules are inside
-`.agents/life-context.md` itself. The quality gate for any addition is
+`.context/life-context.md` itself. The quality gate for any addition is
 "will this still be useful and fair three months from now?" — if no,
 don't write it.
 
-**Compatibility symlinks:** `.agents/em-context.md` is a symlink to
-`life-context.md`, and `.agents/reports/` is a symlink to `people/`.
+**Compatibility symlinks:** `.context/em-context.md` is a symlink to
+`life-context.md`, and `.context/reports/` is a symlink to `people/`.
 These exist so any installed skill expecting the manager.dev convention
 (e.g., `manager-dot-dev/manager-skills/skills/managing-up`) finds the owner's
 context without further setup. Keep both forms working when adding new
 files.
 
-The `.agents/` directory is git-ignored on purpose.
+`.context/` is git-ignored from the public repo and lives in its own
+private git repo — personal data stays separate from the open-source code.
 
 **Respect the existing pipeline.** `generate-parenting-plan.ts` works and runs
 weekly. Do not refactor it as part of unrelated work. If a change in the new
@@ -52,9 +53,8 @@ common way new code breaks.
 patterns to copy.
 
 **Secrets.** `credentials.json`, `token.json`, `.env`, and `.gemini/` are
-git-ignored. Generated outputs (`weekly-parenting-plan.md`) are also
-git-ignored — do not commit them. The new retrieval-layer outputs should
-follow the same convention.
+git-ignored. Generated outputs (everything under `data/`) are also
+git-ignored — do not commit them.
 
 ## Working style
 

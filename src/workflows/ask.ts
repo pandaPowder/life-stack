@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { AIService } from '../services/ai.service.js';
 
 const DATA_DIR = 'data';
-const PLAN_FILE = 'weekly-parenting-plan.md';
+const PLAN_FILE = 'data/parenting/weekly-plan.md';
 
 async function discoverKidsFiles(dataDir: string): Promise<string[]> {
   const kidsDir = path.join(dataDir, 'kids');

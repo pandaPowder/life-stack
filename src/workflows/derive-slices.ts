@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { PlanSlicer } from '../domains/parenting/slicer.js';
 import { userConfig } from '../config/user.js';
 
-const PLAN_FILE = 'weekly-parenting-plan.md';
+const PLAN_FILE = 'data/parenting/weekly-plan.md';
 const DATA_DIR = 'data';
 const CHILDREN = userConfig.children;
 

@@ -7,7 +7,7 @@ import { run as syncTasks } from './sync-tasks.js';
 import { buildContext } from './ask.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
-const PLAN_FILE = path.join(process.cwd(), 'weekly-parenting-plan.md');
+const PLAN_FILE = path.join(process.cwd(), 'data/parenting/weekly-plan.md');
 
 const KIDS_QUESTION =
   'What is the single most important thing for me to do for the kids today, and why?';

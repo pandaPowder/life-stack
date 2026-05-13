@@ -58,6 +58,7 @@ ${Array.from(sourceMap.values()).map(s => `- [${s.type.toUpperCase()}] ${s.url ?
    * Writes the formatted plan to a file.
    */
   static async writeToFile(filePath: string, content: string): Promise<void> {
+    await fs.mkdir(filePath.split('/').slice(0, -1).join('/'), { recursive: true });
     await fs.writeFile(filePath, content);
   }
 }
