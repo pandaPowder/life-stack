@@ -1,66 +1,80 @@
-# Parenting Automation Tool
+# Life Automation
 
-This tool helps automate the extraction of actionable parenting information from school emails and Microsoft Sway newsletters.
+A personal automation toolkit that ingests school communications, messaging
+history, job-search emails, and Todoist tasks — then uses Gemini to produce
+daily cited briefings. The whole thing runs from the terminal in under 30
+seconds.
 
-## 🚀 Getting Started
+## What it does
 
-### 1. Prerequisite: Google Cloud Setup
-To access your Gmail, you need to create a project in the [Google Cloud Console](https://console.cloud.google.com/):
-1.  **Create a New Project.**
-2.  **Enable the Gmail API.**
-3.  **Configure the OAuth Consent Screen:**
-    *   Set user type to "External".
-    *   Add your email as a "Test User".
-4.  **Create Credentials:**
-    *   Click "Create Credentials" -> "OAuth client ID".
-    *   Select "Desktop app".
-    *   Download the JSON file and rename it to `credentials.json` in this project root.
+| Command | What it produces |
+|---|---|
+| `npm start` | Weekly parenting plan — cites Gmail message IDs and Beeper chat IDs |
+| `npm run morning` | Daily briefing: top kids priority + top career priority, with citations |
+| `npm run ask -- "..."` | Ad-hoc Q&A against your current context |
+| `npm run derive-slices` | Splits the weekly plan into per-child and career slices under `data/` |
+| `npm run sync-tasks` | Pulls today's Todoist tasks into `data/tasks/today.md` |
+| `npm run track-jobs` | Parses recruiter emails into a structured job tracker |
+| `npm run prep-interview` | Per-interviewer briefing with LinkedIn + Google Search grounding |
 
-### 2. Prerequisite: Google Gemini API Key
-1.  Go to [Google AI Studio](https://aistudio.google.com/).
-2.  Generate a new API Key.
-3.  Create a `.env` file in this directory and add: `GEMINI_API_KEY=your_key_here`.
+## Stack
 
-### 3. Personalize
-Copy the example config and fill in your details:
+- **TypeScript / Node ESM**
+- **Google Gemini (`gemini-2.5-flash`)** — summarization, extraction, Q&A
+- **Google APIs (Gmail, Drive, Docs)** — email and living context ingestion
+- **Playwright** — renders JavaScript-heavy Sway/Smore newsletters
+- **Todoist API (`@doist/todoist-api-typescript`)** — task sync
+- **Beeper Desktop API** — family messaging history (spouse, co-parent, or family groups)
+- **Vitest** — unit tests with fixture-based smoke tests
+- **Zod** — schema validation for AI-extracted structured data
+
+## Getting started
+
+### 1. Google Cloud setup
+
+1. Create a project in the [Google Cloud Console](https://console.cloud.google.com/).
+2. Enable the **Gmail API** and **Drive API**.
+3. Configure the OAuth Consent Screen (External, add your email as a test user).
+4. Create an OAuth client ID (Desktop app), download the JSON, rename it `credentials.json` in the project root.
+
+### 2. Gemini API key
+
+1. Go to [Google AI Studio](https://aistudio.google.com/) and generate a key.
+2. Create `.env` and add: `GEMINI_API_KEY=your_key_here`
+
+### 3. Todoist API token (optional, for task sync)
+
+Add to `.env`: `TODOIST_API_TOKEN=your_token_here`
+
+### 4. Personalize
+
 ```bash
 cp user.config.example.json user.config.json
 ```
-Edit `user.config.json` with your name, co-parent's name, children's names, and any communication style preferences for AI responses. This file is gitignored.
 
-### 4. Install Dependencies
+Fill in your name, partner/co-parent's name, children's names, and communication style preferences. This file is gitignored.
+
+### 5. Install
+
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-### 5. Run the Tool
-```bash
-npm start
-```
-*The first time you run this, it will open a browser window to authorize Gmail access. It will save a `token.json` for future use.*
+### 6. Run
 
-### 6. Run Tests
 ```bash
-npm test
+npm run morning   # daily briefing
+npm start         # full weekly parenting plan (first run opens a browser for Google auth)
+npm test          # unit tests
 ```
 
-## 🛠️ Customization
-You can change the Gmail search query using the `-q` flag:
-```bash
-npm start -- -q "from:teacher@school.edu"
-npm start -- --query "label:Kids"
-```
+## Architecture
 
-### 🧠 Personalized Context
-This tool integrates with your Google Drive. To provide personalized context for each child:
-1.  Create a folder in Google Drive named **"AI Context"**.
-2.  Add Google Docs describing your children (e.g., "About Child1", "Child2's Interests").
-3.  The AI will automatically pull this text and use it to better assign homework tasks, prioritize extracurricular activities (like Band or Theater), and filter out irrelevant school noise.
+See [GEMINI.md](GEMINI.md) for a detailed breakdown of each service, the
+ingestion pipeline, and how citations are generated.
 
-## 🏗️ Tech Stack
-*   **TypeScript/Node.js**
-*   **Playwright:** For scraping Microsoft Sway (JavaScript-heavy).
-*   **Google Gemini (gemini-2.5-flash):** For stable, high-performance summarization and JSON extraction in 2026.
-*   **Google APIs:** For Gmail access.
-*   **Vitest:** For unit testing.
+## Secrets and generated output
+
+`credentials.json`, `token.json`, `.env`, `user.config.json`, and everything
+under `data/` are gitignored. Never commit them.

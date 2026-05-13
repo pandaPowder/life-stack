@@ -14,7 +14,7 @@ const TASKS: TodoistTask[] = [
   },
   {
     id: '2',
-    content: 'Review Nora school schedule',
+    content: 'Review child school schedule',
     priority: 2,
     due: { date: '2026-05-12', string: 'yesterday' },
     url: 'https://todoist.com/app/task/2',

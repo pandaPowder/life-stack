@@ -15,8 +15,8 @@ async function run() {
   program
     .option('-q, --query <string>', 'Gmail search query', 'sway')
     .option('-k, --key <string>', 'Google Gemini API Key')
-    .option('-d, --days <number>', 'Number of days for WhatsApp history', '7')
-    .option('--skip-emails', 'Skip fetching emails and only use WhatsApp/Drive context')
+    .option('-d, --days <number>', 'Number of days for messaging history', '7')
+    .option('--skip-emails', 'Skip fetching emails and only use messaging/Drive context')
     .parse(process.argv);
 
   const options = program.opts();
@@ -74,31 +74,31 @@ async function run() {
       console.log('--- Step 3: Skipping emails as requested ---');
     }
 
-    // Step 4: WhatsApp context via Beeper REST API
+    // Step 4: Messaging context via Beeper REST API
     const chatNamesStr = process.env.BEEPER_CHAT_NAMES || '';
     if (chatNamesStr) {
       const chatNames = chatNamesStr.split(',').map(n => n.trim());
-      console.log(`\n--- Step 4: Fetching WhatsApp history for: ${chatNames.join(', ')} ---`);
+      console.log(`\n--- Step 4: Fetching messaging history for: ${chatNames.join(', ')} ---`);
       
       const chatIDs = await beeper.findChatIDs(chatNames);
       if (chatIDs.length > 0) {
         const messages = await beeper.getRecentMessages(chatIDs, parseInt(options.days));
         const beeperContext = beeper.formatMessagesForAI(messages);
         consolidatedText += beeperContext;
-        console.log(`Fetched ${messages.length} messages from WhatsApp.`);
+        console.log(`Fetched ${messages.length} messages from Beeper.`);
         
         // Add unique chat names to source map
         const foundChatNames = new Set(messages.map(m => m.chatName));
         foundChatNames.forEach(name => {
           const chatID = messages.find(m => m.chatName === name)?.chatID;
           sourceMap.set(name, { 
-            title: `WhatsApp: ${name}`, 
+            title: `Chat: ${name}`,
             url: chatID ? `beeper://chat/${chatID}` : undefined,
             type: 'whatsapp' 
           });
         });
       } else {
-        console.warn('No matching WhatsApp chats found in Beeper.');
+        console.warn('No matching chats found in Beeper.');
       }
     }
 

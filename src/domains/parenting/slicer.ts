@@ -122,7 +122,7 @@ export class PlanSlicer {
         const dueDateMatch = item.match(/\(Due:\s*([^)]+)\)/i);
         let score: number;
         if (dueDateMatch) {
-          score = dueDateScore(dueDateMatch[1].trim());
+          score = dueDateScore(dueDateMatch[1]!.trim());
         } else if (section.heading.includes('ACTIVITIES')) {
           score = 4;
         } else if (section.heading.includes('PURCHASES')) {

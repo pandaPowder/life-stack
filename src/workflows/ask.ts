@@ -8,14 +8,28 @@ import { AIService } from '../services/ai.service.js';
 const DATA_DIR = 'data';
 const PLAN_FILE = 'weekly-parenting-plan.md';
 
+async function discoverKidsFiles(dataDir: string): Promise<string[]> {
+  const kidsDir = path.join(dataDir, 'kids');
+  try {
+    const entries = await fs.readdir(kidsDir, { withFileTypes: true });
+    return entries
+      .filter(e => e.isDirectory())
+      .map(e => path.join(kidsDir, e.name, 'this-week.md'));
+  } catch {
+    return [];
+  }
+}
+
 // Exported for testing
 export async function buildContext(dataDir: string, planFile: string): Promise<string> {
-  const candidates = [
+  const staticCandidates = [
     path.join(dataDir, 'today.md'),
     path.join(dataDir, 'tasks', 'today.md'),
-    path.join(dataDir, 'kids', 'graham', 'this-week.md'),
-    path.join(dataDir, 'kids', 'nora', 'this-week.md'),
-    path.join(dataDir, 'kids', 'ansel', 'this-week.md'),
+  ];
+  const kidsCandidates = await discoverKidsFiles(dataDir);
+  const candidates = [
+    ...staticCandidates,
+    ...kidsCandidates,
     path.join(dataDir, 'career', 'this-week.md'),
   ];
 

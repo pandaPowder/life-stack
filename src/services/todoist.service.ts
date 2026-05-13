@@ -6,7 +6,7 @@ function toTodoistTask(t: Awaited<ReturnType<TodoistApi['getTasksByFilter']>>['r
     id: t.id,
     content: t.content,
     priority: t.priority as TodoistTask['priority'],
-    due: t.due ? { date: t.due.date, string: t.due.string } : undefined,
+    ...(t.due ? { due: { date: t.due.date, string: t.due.string } } : {}),
     url: `https://todoist.com/app/task/${t.id}`,
   };
 }
