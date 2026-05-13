@@ -16,6 +16,11 @@ const GMAIL_QUERY = [
   'subject:"open role"',
   'subject:"your application"',
   'subject:recruiting',
+  'subject:availability',
+  'subject:schedule',
+  'subject:"your profile"',
+  'subject:"quick call"',
+  'subject:"quick chat"',
   'from:linkedin.com',
   'from:greenhouse.io',
   'from:lever.co',
@@ -23,6 +28,15 @@ const GMAIL_QUERY = [
   'from:workday.com',
   'from:smartrecruiters.com',
 ].join(' OR ');
+
+function parseDaysArg(defaultDays = 30): number {
+  const idx = process.argv.indexOf('--days');
+  if (idx !== -1 && process.argv[idx + 1]) {
+    const parsed = parseInt(process.argv[idx + 1], 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return defaultDays;
+}
 
 async function run() {
   console.log('--- Career Tracking Workflow ---');
@@ -33,6 +47,8 @@ async function run() {
     process.exit(1);
   }
 
+  const lookbackDays = parseDaysArg();
+
   const auth = new AuthService();
   const ai = new AIService(apiKey);
 
@@ -41,8 +57,8 @@ async function run() {
 
   const gmail = new GmailService(auth.auth);
 
-  console.log('2. Searching for job-related emails...');
-  const emails = await gmail.fetchRecentSchoolEmails(GMAIL_QUERY);
+  console.log(`2. Searching for job-related emails (last ${lookbackDays} days)...`);
+  const emails = await gmail.fetchRecentSchoolEmails(GMAIL_QUERY, lookbackDays);
   console.log(`   Found ${emails.length} potential career-related emails.`);
 
   if (emails.length === 0) {

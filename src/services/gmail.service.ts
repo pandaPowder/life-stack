@@ -57,12 +57,11 @@ export class GmailService {
     return emails;
   }
 
-  async fetchRecentSchoolEmails(query: string = 'sway') {
+  async fetchRecentSchoolEmails(query: string = 'sway', lookbackDays: number = 45) {
     if (!this.gmail) throw new Error('Gmail not authorized');
 
-    // Look back 45 days to capture monthly newsletters
-    const fortyFiveDaysAgo = Math.floor((Date.now() - 45 * 24 * 60 * 60 * 1000) / 1000);
-    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${fortyFiveDaysAgo}`;
+    const cutoff = Math.floor((Date.now() - lookbackDays * 24 * 60 * 60 * 1000) / 1000);
+    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${cutoff}`;
     
     const res = await this.gmail.users.messages.list({
       userId: "me",
