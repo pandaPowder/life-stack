@@ -32,9 +32,6 @@ export async function run() {
 
   const plan = PlanSlicer.parse(markdown);
 
-  // data/this-week.md — verbatim copy of the source
-  await write(path.join(DATA_DIR, 'this-week.md'), markdown);
-
   // data/kids/{child}/this-week.md
   for (const child of CHILDREN) {
     const childLower = child.toLowerCase();
