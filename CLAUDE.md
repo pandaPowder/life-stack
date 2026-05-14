@@ -24,20 +24,33 @@ pipeline is wired together).
   applications, interviews, or skill gaps.
 
 These files are the shared memory layer (modeled on `em-context` from
-manager.dev's manager-skills). The auto-update rules are inside
-`.context/life-context.md` itself. The quality gate for any addition is
-"will this still be useful and fair three months from now?" — if no,
-don't write it.
+manager.dev's manager-skills). The quality gate for any addition is:
+**"will this still be useful and fair three months from now?"** — if no,
+don't write it. Time-sensitive events, one-off reminders, and current
+emotional state do not belong here.
 
-**Compatibility symlinks:** `.context/em-context.md` is a symlink to
-`life-context.md`, and `.context/reports/` is a symlink to `people/`.
-These exist so any installed skill expecting the manager.dev convention
-(e.g., `manager-dot-dev/manager-skills/skills/managing-up`) finds the owner's
-context without further setup. Keep both forms working when adding new
-files.
+**Updating `.context/` is the agent's job, not the pipeline's.** When the
+owner shares something durable during a session ("Graham just started
+competitive soccer", "I withdrew from that role at Acme"), propose the
+edit to the relevant file, make it on approval, then commit and push:
+
+```bash
+cd /Users/dallas/code/life/.context
+git add . && git commit -m "update: <what changed>" && git push
+```
+
+`morning.ts` may also flag potential context updates at the end of a
+briefing — those are prompts to bring up in the next agent session, not
+automatic writes.
+
+**Compatibility symlinks:** `.context/em-context.md` → `life-context.md`
+and `.context/reports/` → `people/` exist for manager.dev skill compat.
+`.agents/em-context.md` and `.agents/reports/` forward to `.context/` for
+the same reason. Keep all four working when adding new files.
 
 `.context/` is git-ignored from the public repo and lives in its own
-private git repo — personal data stays separate from the open-source code.
+private git repo (`pandaPowder/life-context`) — clone it separately on a
+new machine.
 
 **Respect the existing pipeline.** `generate-parenting-plan.ts` works and runs
 weekly. Do not refactor it as part of unrelated work. If a change in the new
