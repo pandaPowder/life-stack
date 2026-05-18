@@ -42,7 +42,7 @@ ${plan.homeworkSupport.length === 0 ? 'None found.' : plan.homeworkSupport.map((
 ${plan.purchasesNeeded.length === 0 ? 'None found.' : plan.purchasesNeeded.map((p: any) => `- [${p.priority.toUpperCase()}] **${p.item}**: ${p.reason}${getCitations(p.sources)}`).join('\n')}
 
 ## 🗓️ UPCOMING ACTIVITIES
-${plan.upcomingActivities.length === 0 ? 'None found.' : plan.upcomingActivities.map((a: any) => `- **${a.title}** (${a.date}) @ ${a.location || 'School'}${a.requirements?.length ? `\\n  *Requirements: ${a.requirements.join(', ')}*` : ''}${getCitations(a.sources)}`).join('\n')}
+${plan.upcomingActivities.length === 0 ? 'None found.' : plan.upcomingActivities.map((a: any) => `- **${a.title}** (${a.date}) @ ${a.location || 'School'}${a.requirements?.length ? `\n  *Requirements: ${a.requirements.join(', ')}*` : ''}${getCitations(a.sources)}`).join('\n')}
 
 ## 📢 ANNOUNCEMENTS
 ${plan.announcements.length === 0 ? 'None found.' : plan.announcements.map((ann: any) => `- ${ann.text}${getCitations(ann.sources)}`).join('\n')}
