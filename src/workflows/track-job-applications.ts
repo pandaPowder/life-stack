@@ -67,7 +67,17 @@ async function run() {
   console.log(`   Found ${emails.length} potential career-related emails.`);
 
   console.log('3. Fetching job-related calendar events...');
-  const events = await calendar.fetchJobRelatedEvents(lookbackDays);
+  let events: Awaited<ReturnType<typeof calendar.fetchJobRelatedEvents>> = [];
+  try {
+    events = await calendar.fetchJobRelatedEvents(lookbackDays);
+  } catch (err: any) {
+    const msg: string = err?.cause?.message ?? err?.message ?? '';
+    if (msg.includes('has not been used') || msg.includes('disabled')) {
+      console.warn('   [Calendar] API not enabled in Google Cloud Console — skipping. Enable it at https://console.developers.google.com/apis/library/calendar-json.googleapis.com');
+    } else {
+      console.warn('   [Calendar] Skipping due to error:', msg || err);
+    }
+  }
 
   if (emails.length === 0 && events.length === 0) {
     console.log('   No emails or events found — writing empty career files.');
