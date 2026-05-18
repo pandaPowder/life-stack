@@ -13,7 +13,7 @@ import * as fs from 'fs/promises';
 
 async function run() {
   program
-    .option('-q, --query <string>', 'Gmail search query', 'sway')
+    .option('-q, --query <string>', 'Gmail search query', process.env.PARENTING_PLAN_GMAIL_QUERY || 'label:kids OR sway OR "canyon creek" OR centerpoint')
     .option('-k, --key <string>', 'Google Gemini API Key')
     .option('-d, --days <number>', 'Number of days for messaging history', '7')
     .option('--skip-emails', 'Skip fetching emails and only use messaging/Drive context')
