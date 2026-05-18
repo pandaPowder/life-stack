@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { formatTasks } from './formatter.js';
 import type { TodoistTask } from './types.js';
 
-const FIXED_DATE = new Date('2026-05-13');
+const FIXED_DATE = new Date('2026-05-13T12:00:00.000Z');
 
 const TASKS: TodoistTask[] = [
   {
@@ -31,7 +31,7 @@ describe('formatTasks', () => {
   it('renders a header with the date', () => {
     const md = formatTasks(TASKS, FIXED_DATE);
     expect(md).toContain('Tasks — Today & Overdue');
-    expect(md).toContain('Tuesday');
+    expect(md).toContain('Wednesday');
   });
 
   it('renders priority sections in descending order', () => {
