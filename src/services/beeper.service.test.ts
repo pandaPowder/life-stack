@@ -85,4 +85,55 @@ describe('BeeperService', () => {
       expect(service.formatMessagesForAI([])).toBe('');
     });
   });
+
+  describe('getRecentMessages', () => {
+    const recentTs = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();  // 1 day ago
+    const staleTs  = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+
+    it('returns only messages newer than the cutoff', async () => {
+      (fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [
+          { senderName: 'Alice', text: 'recent msg', timestamp: recentTs, isSender: false },
+          { senderName: 'Bob',   text: 'stale msg',  timestamp: staleTs,  isSender: false },
+        ]}) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ title: 'Test Chat' }) });
+
+      const msgs = await service.getRecentMessages(['chat1'], 7);
+      expect(msgs).toHaveLength(1);
+      expect(msgs[0]!.text).toBe('recent msg');
+    });
+
+    it('sorts messages by timestamp ascending across chats', async () => {
+      const ts1 = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
+      const ts2 = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(); // 1h ago
+
+      // chat1: one message at ts2, chat2: one message at ts1
+      (fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ senderName: 'A', text: 'later', timestamp: ts2, isSender: false }] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ title: 'Chat1' }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ senderName: 'B', text: 'earlier', timestamp: ts1, isSender: false }] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ title: 'Chat2' }) });
+
+      const msgs = await service.getRecentMessages(['chat1', 'chat2'], 7);
+      expect(msgs[0]!.text).toBe('earlier');
+      expect(msgs[1]!.text).toBe('later');
+    });
+
+    it('skips chats with no recent messages', async () => {
+      (fetch as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [
+          { senderName: 'Z', text: 'old', timestamp: staleTs, isSender: false },
+        ]}) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ title: 'Stale Chat' }) });
+
+      const msgs = await service.getRecentMessages(['chat1'], 7);
+      expect(msgs).toHaveLength(0);
+    });
+
+    it('returns an empty array when chatIDs is empty', async () => {
+      const msgs = await service.getRecentMessages([], 7);
+      expect(msgs).toHaveLength(0);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+  });
 });

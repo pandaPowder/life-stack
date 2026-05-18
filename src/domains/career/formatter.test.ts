@@ -93,4 +93,67 @@ describe('formatThisWeek', () => {
     const md = formatThisWeek(rejected, FIXED_DATE);
     expect(md).toContain('No active applications');
   });
+
+  it('renders notes inline', () => {
+    const apps: JobApplication[] = [
+      {
+        company: 'Noteworthy', role: 'SWE', appliedDate: '2026-05-10', status: 'interviewing',
+        notes: 'Onsite next week',
+      },
+    ];
+    const md = formatThisWeek(apps, FIXED_DATE);
+    expect(md).toContain('Onsite next week');
+  });
+
+  it('uses singular "application" when count is 1', () => {
+    const apps: JobApplication[] = [
+      { company: 'Solo', role: 'Dev', appliedDate: '2026-05-10', status: 'applied' },
+    ];
+    const md = formatThisWeek(apps, FIXED_DATE);
+    expect(md).toContain('1 active application*');
+  });
+});
+
+describe('formatApplications — edge cases', () => {
+  it('puts withdrawn applications in the Closed section', () => {
+    const apps: JobApplication[] = [
+      { company: 'Zeta Ltd', role: 'Engineer', appliedDate: '2026-05-05', status: 'withdrawn' },
+    ];
+    const md = formatApplications(apps, FIXED_DATE);
+    const closedPos = md.indexOf('## Closed');
+    const zetaPos = md.indexOf('Zeta Ltd');
+    expect(closedPos).toBeGreaterThanOrEqual(0);
+    expect(zetaPos).toBeGreaterThan(closedPos);
+  });
+
+  it('renders the notes field as an italic snippet', () => {
+    const apps: JobApplication[] = [
+      {
+        company: 'Acme', role: 'Dev', appliedDate: '2026-05-10', status: 'applied',
+        notes: 'Referral from Jane',
+      },
+    ];
+    const md = formatApplications(apps, FIXED_DATE);
+    expect(md).toContain('Referral from Jane');
+  });
+
+  it('renders multiple emailIds as multiple citation links', () => {
+    const apps: JobApplication[] = [
+      {
+        company: 'Multi', role: 'Dev', appliedDate: '2026-05-10', status: 'applied',
+        emailIds: ['id1', 'id2'],
+      },
+    ];
+    const md = formatApplications(apps, FIXED_DATE);
+    expect(md).toContain('[[src](https://mail.google.com/mail/u/0/#inbox/id1)]');
+    expect(md).toContain('[[src](https://mail.google.com/mail/u/0/#inbox/id2)]');
+  });
+
+  it('omits citation suffix when emailIds is absent', () => {
+    const apps: JobApplication[] = [
+      { company: 'NoCite', role: 'Dev', appliedDate: '2026-05-10', status: 'applied' },
+    ];
+    const md = formatApplications(apps, FIXED_DATE);
+    expect(md).not.toContain('[[src]');
+  });
 });
