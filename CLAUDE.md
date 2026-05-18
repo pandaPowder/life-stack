@@ -90,6 +90,9 @@ Do not answer from memory — read the file first.
 | Topic | Skill file | Triggers (read the file if any of these match) |
 |---|---|---|
 | Parenting plan review | `skills/parenting-plan/SKILL.md` | "parenting plan", "check the plan", "let's look at the kids", "this week for the kids", "what's going on with the kids" |
+| Morning briefing | `skills/morning/SKILL.md` | "good morning", "what's my day", "morning briefing", "what do I have today", "what's on my plate" |
+| Career check-in | `skills/career/SKILL.md` | "job search", "career check-in", "review applications", "what's in my pipeline", "career update", "how's my search" |
+| Interview prep | `skills/interview-prep/SKILL.md` | "prep me for", "interview with", "prep for", "interview prep", "interview tomorrow" |
 
 ## What's already here
 

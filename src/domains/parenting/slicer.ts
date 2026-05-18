@@ -82,6 +82,10 @@ export class PlanSlicer {
   static sliceByChild(plan: ParsedPlan, child: string, allChildren: string[] = userConfig.children): string {
     const isChildItem = childTagPattern(child);
     const childPat = anyChildPattern(allChildren);
+    const childFirstName = child.split(' ')[0];
+    const childNameRe = new RegExp(childFirstName, 'i');
+    const allFirstNames = allChildren.map(c => c.split(' ')[0]);
+
     const lines: string[] = [
       `# ${child.toUpperCase()} — THIS WEEK`,
       `*Derived from weekly parenting plan — ${new Date().toLocaleDateString()}*`,
@@ -90,13 +94,21 @@ export class PlanSlicer {
     for (const section of plan.sections) {
       if (section.heading.includes('SOURCES')) continue;
 
-      // If section has any child-tagged items, include only this child's
-      // (homework). Otherwise include everything (purchases, activities,
-      // announcements are shared).
       const sectionHasChildTags = section.items.some(i => childPat.test(i));
-      const items = sectionHasChildTags
-        ? section.items.filter(i => isChildItem.test(i))
-        : section.items;
+      let items: string[];
+
+      if (sectionHasChildTags) {
+        // Homework-style sections: explicit [ChildName] tags — include only this child's.
+        items = section.items.filter(i => isChildItem.test(i));
+      } else {
+        // Activities/purchases/announcements: filter by inline name mention.
+        // Include if: this child's name appears anywhere in the item, OR
+        // no child name appears at all (genuinely shared item).
+        items = section.items.filter(i => {
+          const mentionsAnyChild = allFirstNames.some(n => new RegExp(n, 'i').test(i));
+          return !mentionsAnyChild || childNameRe.test(i);
+        });
+      }
 
       if (items.length === 0) continue;
 

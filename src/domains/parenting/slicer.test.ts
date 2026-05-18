@@ -12,7 +12,7 @@ const FIXTURE = `# WEEKLY PARENTING PLAN
 - [Jordan] **Science**: Volcano project (Due: Monday) [[src](https://mail.google.com/3)]
 
 ## 🛒 PURCHASES NEEDED
-- [HIGH] **Poster board**: For Jordan's science project [[src](https://mail.google.com/3)]
+- [HIGH] **Poster board**: For the science project [[src](https://mail.google.com/3)]
 
 ## 🗓️ UPCOMING ACTIVITIES
 - **Spring Concert** (Thursday) @ Jefferson Middle School
@@ -82,6 +82,19 @@ describe('PlanSlicer', () => {
       const plan = PlanSlicer.parse(FIXTURE);
       const jordanMd = PlanSlicer.sliceByChild(plan, 'Jordan', CHILDREN);
       expect(jordanMd).toContain('[[src](https://mail.google.com/3)]');
+    });
+
+    it('filters activities by child name when names appear in items', () => {
+      const md = `# PLAN\n\n## 🗓️ UPCOMING ACTIVITIES\n- **Alex's Recital** (Friday) @ School\n  *Requirements: Arrive by 6pm* [[src](https://mail.google.com/1)]\n- **Sam's Soccer Game** (Saturday) @ Park [[src](https://mail.google.com/2)]\n- **School Bake Sale** (Monday) @ Cafeteria [[src](https://mail.google.com/3)]\n`;
+      const plan = PlanSlicer.parse(md);
+      const alexMd = PlanSlicer.sliceByChild(plan, 'Alex', CHILDREN);
+      expect(alexMd).toContain('Recital');       // Alex's own event
+      expect(alexMd).not.toContain('Soccer');    // Sam's event excluded
+      expect(alexMd).toContain('Bake Sale');     // no name → shared, included
+      const samMd = PlanSlicer.sliceByChild(plan, 'Sam', CHILDREN);
+      expect(samMd).toContain('Soccer');         // Sam's own event
+      expect(samMd).not.toContain('Recital');    // Alex's event excluded
+      expect(samMd).toContain('Bake Sale');      // shared
     });
 
     it('excludes the SOURCES section', () => {
