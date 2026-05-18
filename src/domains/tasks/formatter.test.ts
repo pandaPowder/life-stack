@@ -64,4 +64,25 @@ describe('formatTasks', () => {
     const md = formatTasks([], FIXED_DATE);
     expect(md).toContain('No tasks due today or overdue');
   });
+
+  it('renders Normal priority (1) tasks under a Normal heading', () => {
+    const lowPri: TodoistTask[] = [
+      { id: '99', content: 'Low priority thing', priority: 1, url: 'https://todoist.com/app/task/99' },
+    ];
+    const md = formatTasks(lowPri, FIXED_DATE);
+    expect(md).toContain('## Normal');
+    expect(md).toContain('Low priority thing');
+  });
+
+  it('groups multiple same-priority tasks under one heading', () => {
+    const tasks: TodoistTask[] = [
+      { id: '1', content: 'First high', priority: 3, url: 'https://todoist.com/app/task/1' },
+      { id: '2', content: 'Second high', priority: 3, url: 'https://todoist.com/app/task/2' },
+    ];
+    const md = formatTasks(tasks, FIXED_DATE);
+    const headingCount = (md.match(/^## High$/gm) ?? []).length;
+    expect(headingCount).toBe(1);
+    expect(md).toContain('First high');
+    expect(md).toContain('Second high');
+  });
 });
