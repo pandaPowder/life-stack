@@ -81,6 +81,16 @@ git-ignored — do not commit them.
   preserve this: never produce a recommendation without showing where it came
   from.
 
+## Skills (conversational workflows)
+
+Skill files live in `skills/<name>/SKILL.md`. Read the relevant one at the start
+of any session that matches a skill's triggers — it tells you which files to
+load, how to orient, and how to close the loop.
+
+| Topic | Skill file | Triggers |
+|---|---|---|
+| Parenting plan review | `skills/parenting-plan/SKILL.md` | "parenting plan", "let's look at the kids", "this week for the kids" |
+
 ## What's already here
 
 - **`generate-parenting-plan.ts`** — Gmail + Sway/Smore + Beeper + Drive
