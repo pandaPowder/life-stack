@@ -23,17 +23,21 @@ export class LinkedInService {
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Always pause — LinkedIn's authwall often overlays the profile URL without redirecting,
-    // so URL checks alone aren't reliable. Let the user confirm the page is ready.
-    await waitForEnter(
-      '\n[LinkedIn] Browser is open. Log in if prompted, then press Enter once the profile is fully visible...',
-    );
-
-    // If we ended up on a login/checkpoint page, reload the target URL
-    const blockedUrls = ['/login', '/authwall', '/checkpoint'];
+    // Only prompt if LinkedIn redirected to an auth/login/checkpoint page.
+    // If the session cookie is still valid the profile loads directly — no interaction needed.
+    const blockedUrls = ['/login', '/authwall', '/checkpoint', '/signup'];
     if (blockedUrls.some(p => page.url().includes(p))) {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await waitForEnter('[LinkedIn] Navigate back to the profile if needed, then press Enter...');
+      await waitForEnter(
+        '\n[LinkedIn] Login required. Log in, navigate to the profile, then press Enter once the profile is fully visible...',
+      );
+      // After login, navigate to the original URL if we're still not there
+      if (blockedUrls.some(p => page.url().includes(p))) {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await waitForEnter('[LinkedIn] Navigate to the profile if needed, then press Enter...');
+      }
+    } else {
+      // Already on the profile — give it a moment to finish rendering
+      await page.waitForTimeout(2000);
     }
 
     // Wait for main content

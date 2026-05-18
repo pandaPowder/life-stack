@@ -14,11 +14,32 @@ Invoke this skill when the user says anything like:
 Extract the person's name or company from the user's message. If ambiguous,
 check `data/career/this-week.md` for active interviews and ask which one.
 
-## Step 2 — Run the prep script
+## Step 2 — Find LinkedIn URLs before running the script
+
+LinkedIn profile URLs make the briefing significantly better — they enable
+real career history, mutual connection detection, and specific ice-breakers
+instead of generic fallbacks.
+
+**Before running the script**, check these sources for LinkedIn URLs:
+
+1. **Calendar events** — use the Calendar MCP (`list_events` or `get_event`)
+   to pull the interview event. The description often contains LinkedIn URLs
+   for each interviewer.
+2. **Gmail** — check the recruiter email thread for the company. Recruiters
+   frequently include LinkedIn URLs in scheduling emails.
+
+If you find a URL, pass it with `--linkedin`. Run one invocation per
+interviewer (not one per company):
 
 ```bash
-npm run prep-interview -- "<name or company>"
+npm run prep-interview -- "<Interviewer Name>" "<Company>" \
+  --linkedin "https://www.linkedin.com/in/<slug>"
 ```
+
+If no URL is found after checking both sources, run without it and note the
+gap so the user can supply it manually.
+
+## Step 3 — Run the prep script
 
 This takes ~1–2 minutes (LinkedIn scraping + Google Search grounding).
 Tell the user it's running. When it finishes, the briefing prints to stdout —
