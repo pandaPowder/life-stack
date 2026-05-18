@@ -82,9 +82,9 @@ export class PlanSlicer {
   static sliceByChild(plan: ParsedPlan, child: string, allChildren: string[] = userConfig.children): string {
     const isChildItem = childTagPattern(child);
     const childPat = anyChildPattern(allChildren);
-    const childFirstName = child.split(' ')[0];
+    const childFirstName = child.split(' ')[0]!;
     const childNameRe = new RegExp(childFirstName, 'i');
-    const allFirstNames = allChildren.map(c => c.split(' ')[0]);
+    const allFirstNames = allChildren.map(c => c.split(' ')[0]!);
 
     const lines: string[] = [
       `# ${child.toUpperCase()} — THIS WEEK`,

@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { AuthService } from '../services/auth.service.js';
 import { GmailService } from '../services/gmail.service.js';
+import { CalendarService } from '../services/calendar.service.js';
 import { AIService } from '../services/ai.service.js';
 import { formatApplications, formatThisWeek } from '../domains/career/formatter.js';
 
@@ -27,6 +28,9 @@ const GMAIL_QUERY = [
   'from:ashbyhq.com',
   'from:workday.com',
   'from:smartrecruiters.com',
+  'from:roberthalf.com',
+  'from:consultnet.com',
+  'from:puresearch.com',
 ].join(' OR ');
 
 function parseDaysArg(defaultDays = 30): number {
@@ -56,21 +60,25 @@ async function run() {
   await auth.authorize();
 
   const gmail = new GmailService(auth.auth);
+  const calendar = new CalendarService(auth.auth);
 
   console.log(`2. Searching for job-related emails (last ${lookbackDays} days)...`);
   const emails = await gmail.fetchRecentSchoolEmails(GMAIL_QUERY, lookbackDays);
   console.log(`   Found ${emails.length} potential career-related emails.`);
 
-  if (emails.length === 0) {
-    console.log('   No emails found — writing empty career files.');
+  console.log('3. Fetching job-related calendar events...');
+  const events = await calendar.fetchJobRelatedEvents(lookbackDays);
+
+  if (emails.length === 0 && events.length === 0) {
+    console.log('   No emails or events found — writing empty career files.');
     await writeOutputs([]);
     return;
   }
 
-  console.log('3. Parsing applications with AI...');
-  const applications = await ai.parseJobApplications(emails);
+  console.log('4. Parsing applications with AI...');
+  const applications = await ai.parseJobApplications(emails, events);
 
-  console.log('4. Writing career files...');
+  console.log('5. Writing career files...');
   await writeOutputs(applications);
 
   console.log('\nActive applications:');

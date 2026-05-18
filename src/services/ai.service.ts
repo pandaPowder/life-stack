@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ParentingPlan } from '../types/index.js';
-import type { RecruiterEmail, JobApplication } from '../domains/career/types.js';
+import type { RecruiterEmail, JobApplication, CalendarEvent } from '../domains/career/types.js';
 import { JobApplicationsResponseSchema } from '../domains/career/types.js';
 import { userConfig } from '../config/user.js';
 
@@ -76,8 +76,8 @@ export class AIService {
     return plan;
   }
 
-  async parseJobApplications(emails: RecruiterEmail[]): Promise<JobApplication[]> {
-    if (emails.length === 0) return [];
+  async parseJobApplications(emails: RecruiterEmail[], events: CalendarEvent[] = []): Promise<JobApplication[]> {
+    if (emails.length === 0 && events.length === 0) return [];
 
     const emailsText = emails
       .map(e =>
@@ -85,9 +85,25 @@ export class AIService {
       )
       .join('\n\n---\n\n');
 
-    const prompt = `You are parsing job-search emails for ${userConfig.userName} to build a job application tracker.
+    const eventsText = events
+      .map(e =>
+        [
+          `CALENDAR_EVENT_ID: ${e.id}`,
+          `Title: ${e.title}`,
+          `Start: ${e.start}`,
+          e.end ? `End: ${e.end}` : null,
+          e.location ? `Location: ${e.location}` : null,
+          e.attendees?.length ? `Attendees: ${e.attendees.join(', ')}` : null,
+          e.description ? `Description: ${e.description.slice(0, 500)}` : null,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      )
+      .join('\n\n---\n\n');
 
-Group emails by unique company+role. For each group, return the current state based on the most recent email.
+    const prompt = `You are parsing job-search emails and calendar events for ${userConfig.userName} to build a job application tracker.
+
+Group by unique company+role. For each group, return the current state based on the most recent signal (email or calendar event).
 
 STATUS RULES:
 - "outreach": a recruiter contacted ${userConfig.userName} but no application has been submitted
@@ -97,8 +113,9 @@ STATUS RULES:
 - "rejected": application was declined
 - "withdrawn": ${userConfig.userName} withdrew
 
-For appliedDate use the date of the most relevant email (first contact or application submission).
-Include the EMAIL_IDs of all relevant emails in the emailIds array (use the exact ID strings).
+Calendar events are strong signals: a calendar event titled "Interview - X" means an interview happened or is scheduled.
+For appliedDate use the date of the most relevant signal (first contact or application submission).
+Include the EMAIL_IDs and CALENDAR_EVENT_IDs of all relevant items in the emailIds array.
 Omit purely promotional/newsletter emails (e.g. job alert digests with no specific outreach).
 
 Return JSON:
@@ -117,7 +134,12 @@ Return JSON:
 
 EMAILS:
 ---
-${emailsText}
+${emailsText || '(none)'}
+---
+
+CALENDAR EVENTS:
+---
+${eventsText || '(none)'}
 ---`;
 
     const result = await this.model.generateContent(prompt);

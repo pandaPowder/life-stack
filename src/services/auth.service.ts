@@ -7,7 +7,8 @@ export class AuthService {
   private SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/drive.readonly',
-    'https://www.googleapis.com/auth/documents.readonly'
+    'https://www.googleapis.com/auth/documents.readonly',
+    'https://www.googleapis.com/auth/calendar.readonly',
   ];
   private TOKEN_PATH = path.join(process.cwd(), 'token.json');
   private CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
