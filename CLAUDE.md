@@ -83,13 +83,13 @@ git-ignored — do not commit them.
 
 ## Skills (conversational workflows)
 
-Skill files live in `skills/<name>/SKILL.md`. Read the relevant one at the start
-of any session that matches a skill's triggers — it tells you which files to
-load, how to orient, and how to close the loop.
+Skill files live in `skills/<name>/SKILL.md`. **You must read the matching skill
+file before responding** whenever the user's message matches a trigger below.
+Do not answer from memory — read the file first.
 
-| Topic | Skill file | Triggers |
+| Topic | Skill file | Triggers (read the file if any of these match) |
 |---|---|---|
-| Parenting plan review | `skills/parenting-plan/SKILL.md` | "parenting plan", "let's look at the kids", "this week for the kids" |
+| Parenting plan review | `skills/parenting-plan/SKILL.md` | "parenting plan", "check the plan", "let's look at the kids", "this week for the kids", "what's going on with the kids" |
 
 ## What's already here
 
