@@ -145,3 +145,17 @@ The existing pipeline uses `gemini-2.5-flash` via `@google/generative-ai`.
 Claude Code will, by default, do its own reasoning in conversation with you;
 the production pipeline keeps using Gemini unless we explicitly decide to
 migrate. Don't silently swap providers.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`pandaPowder/life-stack`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical label strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
