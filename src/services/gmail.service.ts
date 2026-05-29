@@ -5,6 +5,15 @@ import * as os from 'os';
 import * as path from 'path';
 import { extractDocxText } from '../utils/docx.js';
 
+export interface GmailMessage {
+  id: string;
+  sender: string;
+  subject: string;
+  body: string;
+  date: Date;
+  swayLinks: string[];
+}
+
 export class GmailService {
   private gmail: gmail_v1.Gmail;
 
@@ -57,11 +66,11 @@ export class GmailService {
     return emails;
   }
 
-  async fetchRecentSchoolEmails(query: string = 'sway', lookbackDays: number = 45) {
+  async fetchMessages(query: string = 'sway', lookbackDays: number = 45): Promise<GmailMessage[]> {
     if (!this.gmail) throw new Error('Gmail not authorized');
 
     const cutoff = Math.floor((Date.now() - lookbackDays * 24 * 60 * 60 * 1000) / 1000);
-    const q = `${query} -subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted" after:${cutoff}`;
+    const q = `${query} after:${cutoff}`;
     
     const res = await this.gmail.users.messages.list({
       userId: "me",
@@ -70,7 +79,7 @@ export class GmailService {
 
     const messages = res.data.messages || [];
     console.log(`\n[FETCH] Gmail found ${messages.length} message IDs for query "${q}".`);
-    const emails = [];
+    const emails: GmailMessage[] = [];
 
     const resolveLink = async (url: string): Promise<string> => {
       try {
