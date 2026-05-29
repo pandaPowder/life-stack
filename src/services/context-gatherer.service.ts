@@ -3,6 +3,7 @@ import type { GmailService, GmailMessage } from './gmail.service.js';
 import type { DriveService } from './drive.service.js';
 import type { BeeperService, BeeperMessage } from './beeper.service.js';
 import type { SwayService } from './sway.service.js';
+import type { OFWService, OFWMessage } from './ofw.service.js';
 import type { SourceLink } from '../domains/parenting/formatter.js';
 
 const SCHOOL_NOISE_FILTER = '-subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted"';
@@ -12,11 +13,14 @@ export interface GatherOptions {
   days: number;
   skipEmails: boolean;
   chatNames: string[];
+  skipOfw?: boolean;
+  ofwPdf?: string;
 }
 
 export interface GatheredContext {
   emails: GmailMessage[];
   beeperMessages: BeeperMessage[];
+  ofwMessages: OFWMessage[];
   driveContext: string;
   rawText: string;
   sourceMap: Map<string, SourceLink>;
@@ -28,6 +32,7 @@ export class ContextGatherer {
     drive: DriveService;
     beeper: BeeperService;
     sway: SwayService;
+    ofw: OFWService;
   }) {}
 
   async gather(opts: GatherOptions): Promise<GatheredContext> {
@@ -90,6 +95,29 @@ export class ContextGatherer {
       }
     }
 
-    return { emails, beeperMessages, driveContext, rawText, sourceMap };
+    // Step 5: OFW co-parenting messages
+    const ofwMessages: OFWMessage[] = [];
+    if (!opts.skipOfw) {
+      console.log('\n--- Step 5: Fetching OFW co-parenting messages ---');
+      try {
+        const msgs = opts.ofwPdf
+          ? this.services.ofw.parseFromPdf(opts.ofwPdf)
+          : await this.services.ofw.downloadRecentMessages(opts.days);
+        ofwMessages.push(...msgs);
+        rawText += this.services.ofw.formatMessagesForAI(msgs);
+        console.log(`[OFW] Fetched ${msgs.length} messages.`);
+        sourceMap.set('OFW Messages', {
+          title: 'OFW Co-Parenting Messages',
+          url: undefined,
+          type: 'ofw' as any,
+        });
+      } catch (e: any) {
+        console.warn(`[OFW] Skipping — ${e.message}`);
+      }
+    } else {
+      console.log('\n--- Step 5: Skipping OFW as requested ---');
+    }
+
+    return { emails, beeperMessages, ofwMessages, driveContext, rawText, sourceMap };
   }
 }
