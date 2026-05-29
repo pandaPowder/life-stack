@@ -7,9 +7,22 @@ import { DriveService } from '../services/drive.service.js';
 import { SwayService } from '../services/sway.service.js';
 import { AIService } from '../services/ai.service.js';
 import { BeeperService } from '../services/beeper.service.js';
+import { ContextGatherer } from '../services/context-gatherer.service.js';
 import { PlanFormatter } from '../domains/parenting/formatter.js';
-import type { SourceLink } from '../domains/parenting/formatter.js';
-import * as fs from 'fs/promises';
+
+async function setupServices() {
+  const auth = new AuthService();
+  const sway = new SwayService();
+  const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
+  console.log('--- Step 1: Authorizing with Google ---');
+  await auth.authorize();
+  return {
+    gmail: new GmailService(auth.auth),
+    drive: new DriveService(auth.auth),
+    beeper,
+    sway,
+  };
+}
 
 async function run() {
   program
@@ -27,97 +40,34 @@ async function run() {
     process.exit(1);
   }
 
-  const auth = new AuthService();
-  const sway = new SwayService();
   const ai = new AIService(apiKey);
-  const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
-  const sourceMap = new Map<string, SourceLink>();
 
   try {
-    console.log('--- Step 1: Authorizing with Google ---');
-    await auth.authorize();
+    const services = await setupServices();
+    const gatherer = new ContextGatherer(services);
+    const ctx = await gatherer.gather({
+      query: options.query,
+      days: parseInt(options.days),
+      skipEmails: options.skipEmails,
+      chatNames: (process.env.BEEPER_CHAT_NAMES || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+    });
 
-    const gmail = new GmailService(auth.auth);
-    const drive = new DriveService(auth.auth);
-
-    console.log('--- Step 2: Fetching AI Context from Drive ---');
-    const context = await drive.getAIContextFolderContent('AI Context');
-
-    let consolidatedText = '';
-
-    if (!options.skipEmails) {
-      console.log(`--- Step 3: Fetching emails (query: "${options.query}") ---`);
-      const emails = await gmail.fetchRecentSchoolEmails(options.query);
-      console.log(`Found ${emails.length} emails.`);
-
-      for (const email of emails) {
-        console.log(`\nProcessing Email: ${email.subject}`);
-        consolidatedText += `Subject: ${email.subject}\nFrom: ${email.sender}\nBody: ${email.body}\n`;
-        
-        sourceMap.set(email.subject, {
-          title: email.subject,
-          url: `https://mail.google.com/mail/u/0/#inbox/${email.id}`,
-          type: 'gmail'
-        });
-
-        if (email.swayLinks.length > 0) {
-          for (const link of email.swayLinks) {
-            console.log(`Scraping Sway: ${link}`);
-            const swayContent = await sway.scrapeSway(link);
-            consolidatedText += `\n[Sway Content from ${link}]:\n${swayContent}\n`;
-            // We'll map the sway link itself too if it appears as a source
-            sourceMap.set(link, { title: `Sway: ${email.subject}`, url: link, type: 'sway' });
-          }
-        }
-      }
-    } else {
-      console.log('--- Step 3: Skipping emails as requested ---');
-    }
-
-    // Step 4: Messaging context via Beeper REST API
-    const chatNamesStr = process.env.BEEPER_CHAT_NAMES || '';
-    if (chatNamesStr) {
-      const chatNames = chatNamesStr.split(',').map(n => n.trim());
-      console.log(`\n--- Step 4: Fetching messaging history for: ${chatNames.join(', ')} ---`);
-      
-      const chatIDs = await beeper.findChatIDs(chatNames);
-      if (chatIDs.length > 0) {
-        const messages = await beeper.getRecentMessages(chatIDs, parseInt(options.days));
-        const beeperContext = beeper.formatMessagesForAI(messages);
-        consolidatedText += beeperContext;
-        console.log(`Fetched ${messages.length} messages from Beeper.`);
-        
-        // Add unique chat names to source map
-        const foundChatNames = new Set(messages.map(m => m.chatName));
-        foundChatNames.forEach(name => {
-          const chatID = messages.find(m => m.chatName === name)?.chatID;
-          sourceMap.set(name, { 
-            title: `Chat: ${name}`,
-            url: chatID ? `beeper://chat/${chatID}` : undefined,
-            type: 'whatsapp' 
-          });
-        });
-      } else {
-        console.warn('No matching chats found in Beeper.');
-      }
-    }
-
-    if (!consolidatedText) {
+    if (!ctx.rawText) {
       console.log('No emails or content found to summarize.');
       return;
     }
 
     console.log('\n--- Step 5: Generating Parenting Plan with Unified Context ---');
-    const plan = await ai.generateParentingPlan(consolidatedText, context);
+    const plan = await ai.generateParentingPlan(ctx.rawText, ctx.driveContext);
 
-    const markdown = PlanFormatter.formatMarkdown(plan, sourceMap);
+    const markdown = PlanFormatter.formatMarkdown(plan, ctx.sourceMap);
     await PlanFormatter.writeToFile('data/parenting/weekly-plan.md', markdown);
     console.log('\n[SUCCESS] Plan written to data/parenting/weekly-plan.md');
 
     console.log('\n==========================================');
     console.log('       WEEKLY PARENTING PLAN');
     console.log('==========================================');
-    
+
     console.log('\n📚 HOMEWORK SUPPORT:');
     if (plan.homeworkSupport.length === 0) console.log('None found.');
     plan.homeworkSupport.forEach(t => console.log(`- [${t.child}] ${t.subject}: ${t.description} (Due: ${t.dueDate || 'N/A'})`));

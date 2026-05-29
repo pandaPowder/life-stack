@@ -1,11 +1,4 @@
-export interface SchoolEmail {
-  id: string;
-  sender: string;
-  subject: string;
-  body: string;
-  date: Date;
-  swayLinks: string[];
-}
+
 
 export interface ParentingPlan {
   homeworkSupport: SupportTask[];

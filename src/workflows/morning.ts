@@ -4,7 +4,7 @@ import * as path from 'path';
 import { AIService } from '../services/ai.service.js';
 import { run as deriveSlices } from './derive-slices.js';
 import { run as syncTasks } from './sync-tasks.js';
-import { buildContext } from './ask.js';
+import { buildContext } from '../utils/context.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const PLAN_FILE = path.join(process.cwd(), 'data/parenting/weekly-plan.md');

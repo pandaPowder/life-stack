@@ -7,6 +7,7 @@ import { GmailService } from '../services/gmail.service.js';
 import { CalendarService } from '../services/calendar.service.js';
 import { AIService } from '../services/ai.service.js';
 import { formatApplications, formatThisWeek } from '../domains/career/formatter.js';
+import type { RecruiterEmail } from '../domains/career/types.js';
 
 const DATA_DIR = 'data/career';
 const GMAIL_QUERY = [
@@ -63,7 +64,14 @@ async function run() {
   const calendar = new CalendarService(auth.auth);
 
   console.log(`2. Searching for job-related emails (last ${lookbackDays} days)...`);
-  const emails = await gmail.fetchRecentSchoolEmails(GMAIL_QUERY, lookbackDays);
+  const rawEmails = await gmail.fetchMessages(GMAIL_QUERY, lookbackDays);
+  const emails: RecruiterEmail[] = rawEmails.map(e => ({
+    id: e.id,
+    sender: e.sender,
+    subject: e.subject,
+    body: e.body,
+    date: e.date,
+  }));
   console.log(`   Found ${emails.length} potential career-related emails.`);
 
   console.log('3. Fetching job-related calendar events...');
