@@ -7,6 +7,7 @@ import { webkit, type BrowserContext, type Download, type Page } from 'playwrigh
 import { userConfig } from '../config/user.js';
 
 const OFW_PROFILE_DIR = path.join(os.homedir(), '.life-automation', 'ofw-webkit-profile');
+const OFW_STATE_FILE = path.join(os.homedir(), '.life-automation', 'ofw-state.json');
 const OFW_APP_URL = 'https://ofw.ourfamilywizard.com';
 const OFW_LOGIN_PATHS = ['/login', '/sign-in', '/auth', '/app/login'];
 
@@ -32,11 +33,24 @@ export class OFWService {
       acceptDownloads: true,
     });
 
-    const page = context.pages()[0] ?? await context.newPage();
-
     try {
+      // Restore session cookies if available
+      const fs = await import('fs/promises');
+      try {
+        const stateStr = await fs.readFile(OFW_STATE_FILE, 'utf-8');
+        const state = JSON.parse(stateStr);
+        if (state.cookies && state.cookies.length > 0) {
+          await context.addCookies(state.cookies);
+        }
+      } catch (e) {
+        // Ignore missing state file
+      }
+
+      const page = context.pages()[0] ?? await context.newPage();
+
       // Navigate directly to the messages view (works whether or not already logged in)
       await page.goto(`${OFW_APP_URL}/app/messages`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForTimeout(3000); // Wait for potential SPA redirects
       console.log(`[OFW] Landed on: ${page.url()}`);
 
       // Protected routes redirect to /app/login when the session has expired or is new
@@ -46,6 +60,9 @@ export class OFWService {
         );
         console.log(`[OFW] After login: ${page.url()}`);
       }
+
+      // Save the state to persist session cookies for next time
+      await context.storageState({ path: OFW_STATE_FILE });
 
       const endDate = new Date();
       const startDate = new Date();
@@ -74,8 +91,8 @@ export class OFWService {
       return `${mm}/${dd}/${d.getFullYear()}`;
     };
 
-    // Try automated path: find the print/download button OFW shows in the All Messages view
-    const printBtn = page.locator('#downloadBtn');
+    // Try automated path: find the print/download/report button OFW shows in the All Messages view
+    const printBtn = page.locator('button[aria-label="Download"], button:has-text("Report")').first();
     const canAutomate = await printBtn.isVisible({ timeout: 5000 }).catch(() => false);
 
     if (canAutomate) {
@@ -83,15 +100,20 @@ export class OFWService {
         page.waitForEvent('download', { timeout: 60000 }),
         (async () => {
           await printBtn.click();
-          await page.locator('#downloadForm').waitFor({ state: 'visible', timeout: 5000 });
+          await page.waitForTimeout(1500);
           
-          await page.locator('#messagesSelect').click();
-          await page.locator('[role="option"]').filter({ hasText: 'Within Date Range' }).click();
+          await page.locator('[aria-label="messagesSelect-label"], [name="messageSelection"]').first().click();
+          await page.waitForTimeout(1000);
+
+          await page.locator('li, [role="option"]').filter({ hasText: /date range/i }).first().click();
+          await page.waitForTimeout(1000);
           
           await page.locator('input[name="from"]').fill(fmt(startDate));
           await page.locator('input[name="to"]').fill(fmt(endDate));
           
-          await page.locator('#generateBtn').click();
+          await page.waitForTimeout(1000);
+          
+          await page.locator('button').filter({ hasText: /^download$/i }).last().click();
         })(),
       ]);
       return dl;
