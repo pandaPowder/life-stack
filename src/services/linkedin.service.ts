@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { webkit } from 'playwright';
 import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -13,10 +13,8 @@ function waitForEnter(prompt: string): Promise<void> {
 export class LinkedInService {
   async fetchProfile(url: string): Promise<string> {
     console.log('[LinkedIn] Launching browser...');
-    const context = await chromium.launchPersistentContext(PROFILE_DIR, {
+    const context = await webkit.launchPersistentContext(PROFILE_DIR, {
       headless: false,
-      channel: 'chrome',
-      args: ['--no-first-run', '--no-default-browser-check'],
     });
 
     const page = context.pages()[0] ?? await context.newPage();

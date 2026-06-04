@@ -1,19 +1,23 @@
 import dotenv from 'dotenv';
 dotenv.config({ override: true });
-import { program } from 'commander';
+import { Command } from 'commander';
 import { AuthService } from '../services/auth.service.js';
 import { GmailService } from '../services/gmail.service.js';
 import { DriveService } from '../services/drive.service.js';
 import { SwayService } from '../services/sway.service.js';
 import { AIService } from '../services/ai.service.js';
 import { BeeperService } from '../services/beeper.service.js';
+import { OFWService } from '../services/ofw.service.js';
 import { ContextGatherer } from '../services/context-gatherer.service.js';
 import { PlanFormatter } from '../domains/parenting/formatter.js';
+
+import { fileURLToPath } from 'url';
 
 async function setupServices() {
   const auth = new AuthService();
   const sway = new SwayService();
   const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
+  const ofw = new OFWService();
   console.log('--- Step 1: Authorizing with Google ---');
   await auth.authorize();
   return {
@@ -21,18 +25,22 @@ async function setupServices() {
     drive: new DriveService(auth.auth),
     beeper,
     sway,
+    ofw,
   };
 }
 
-async function run() {
-  program
+export async function run() {
+  const localProgram = new Command();
+  localProgram
     .option('-q, --query <string>', 'Gmail search query', process.env.PARENTING_PLAN_GMAIL_QUERY || 'label:kids OR sway OR "canyon creek" OR centerpoint')
     .option('-k, --key <string>', 'Google Gemini API Key')
     .option('-d, --days <number>', 'Number of days for messaging history', '7')
     .option('--skip-emails', 'Skip fetching emails and only use messaging/Drive context')
+    .option('--skip-ofw', 'Skip OFW message download')
+    .option('--ofw-pdf <path>', 'Parse a manually-downloaded OFW PDF instead of launching the browser')
     .parse(process.argv);
 
-  const options = program.opts();
+  const options = localProgram.opts();
   const apiKey = options.key || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -50,6 +58,8 @@ async function run() {
       days: parseInt(options.days),
       skipEmails: options.skipEmails,
       chatNames: (process.env.BEEPER_CHAT_NAMES || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+      skipOfw: options.skipOfw,
+      ofwPdf: options.ofwPdf,
     });
 
     if (!ctx.rawText) {
@@ -57,7 +67,7 @@ async function run() {
       return;
     }
 
-    console.log('\n--- Step 5: Generating Parenting Plan with Unified Context ---');
+    console.log('\n--- Step 6: Generating Parenting Plan with Unified Context ---');
     const plan = await ai.generateParentingPlan(ctx.rawText, ctx.driveContext);
 
     const markdown = PlanFormatter.formatMarkdown(plan, ctx.sourceMap);
@@ -97,4 +107,6 @@ async function run() {
   }
 }
 
-run();
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1] === fileURLToPath(import.meta.url)) {
+  run();
+}
