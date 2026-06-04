@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
 
-const PROFILE_DIR = path.join(os.homedir(), '.life-automation', 'linkedin-profile');
+const PROFILE_DIR = path.join(os.homedir(), '.life-automation', 'linkedin-webkit-profile');
 
 function waitForEnter(prompt: string): Promise<void> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
