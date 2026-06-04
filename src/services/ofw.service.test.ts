@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { OFWService } from './ofw.service.js';
+import * as child_process from 'child_process';
 
 // Fixture matches the real pdftotext -layout format exactly:
 // top-level message at ~6-space indent, quoted thread at ~17-space indent.
@@ -62,6 +63,8 @@ vi.mock('../config/user.js', () => ({
     communicationStyle: '',
   },
 }));
+
+vi.mock('child_process');
 
 describe('OFWService', () => {
   let service: OFWService;
@@ -133,6 +136,60 @@ describe('OFWService', () => {
         expect(messages[i].sent.getTime()).toBeGreaterThanOrEqual(messages[i - 1].sent.getTime());
       }
     });
+
+    it('normalizes form-feed (\\f) page breaks', () => {
+      const textWithFormFeeds = SAMPLE_TEXT.replace(/\nMessage/g, '\fMessage');
+      const messages = service.parseText(textWithFormFeeds);
+      expect(messages).toHaveLength(3);
+    });
+
+    it('handles 12AM and 12PM correctly', () => {
+      const edgeCaseText = `Message Report
+Generated: 05/18/2026 4:30 PM by Dallas Despain
+Message 1 of 2
+      Sent:            01/01/2026 12:00 AM
+      From:            Jenny Lund
+      To:              Dallas Despain
+      Subject:         Midnight
+      Happy New Year!
+Message 2 of 2
+      Sent:            01/01/2026 12:00 PM
+      From:            Jenny Lund
+      To:              Dallas Despain
+      Subject:         Noon
+      Lunchtime!
+`;
+      const messages = service.parseText(edgeCaseText);
+      expect(messages).toHaveLength(2);
+      expect(messages[0].sent.getHours()).toBe(0);
+      expect(messages[0].sent.getMinutes()).toBe(0);
+      expect(messages[1].sent.getHours()).toBe(12);
+      expect(messages[1].sent.getMinutes()).toBe(0);
+    });
+
+    it('handles empty body correctly', () => {
+      const emptyBodyText = `Message Report
+Generated: 05/18/2026 4:30 PM by Dallas Despain
+Message 1 of 1
+      Sent:            01/01/2026 10:00 AM
+      From:            Jenny Lund
+      To:              Dallas Despain
+      Subject:         Subject only, no body
+`;
+      const messages = service.parseText(emptyBodyText);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].body).toBe('');
+      expect(messages[0].subject).toBe('Subject only, no body');
+    });
+  });
+
+  describe('parseFromPdf', () => {
+    it('executes pdftotext and parses the output', () => {
+      vi.mocked(child_process.execSync).mockReturnValue(Buffer.from(SAMPLE_TEXT));
+      const messages = service.parseFromPdf('/path/to/fake.pdf');
+      expect(child_process.execSync).toHaveBeenCalledWith('pdftotext -layout "/path/to/fake.pdf" -');
+      expect(messages).toHaveLength(3);
+    });
   });
 
   describe('filterByDays', () => {
@@ -147,6 +204,19 @@ describe('OFWService', () => {
       const messages = service.parseText(SAMPLE_TEXT);
       const all = service.filterByDays(messages, 9999);
       expect(all).toHaveLength(messages.length);
+    });
+
+    it('includes messages exactly on the boundary', () => {
+      const messages = service.parseText(SAMPLE_TEXT);
+      // Let's modify the first message's date to be exactly the cutoff time
+      const testMsg = messages[0];
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 5);
+      testMsg.sent = cutoff;
+      
+      const filtered = service.filterByDays([testMsg], 5);
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0]).toBe(testMsg);
     });
   });
 

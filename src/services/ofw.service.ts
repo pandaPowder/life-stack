@@ -3,12 +3,12 @@ import { unlink } from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
-import { chromium, type Download, type Page } from 'playwright';
+import { webkit, type BrowserContext, type Download, type Page } from 'playwright';
 import { userConfig } from '../config/user.js';
 
-const OFW_PROFILE_DIR = path.join(os.homedir(), '.life-automation', 'ofw-profile');
-const OFW_APP_URL = 'https://app.ourfamilywizard.com';
-const OFW_LOGIN_PATHS = ['/login', '/sign-in', '/auth'];
+const OFW_PROFILE_DIR = path.join(os.homedir(), '.life-automation', 'ofw-webkit-profile');
+const OFW_APP_URL = 'https://ofw.ourfamilywizard.com';
+const OFW_LOGIN_PATHS = ['/login', '/sign-in', '/auth', '/app/login'];
 
 function waitForEnter(prompt: string): Promise<void> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -27,45 +27,31 @@ export interface OFWMessage {
 export class OFWService {
   async downloadRecentMessages(days: number): Promise<OFWMessage[]> {
     console.log('[OFW] Launching browser with persistent session...');
-    const context = await chromium.launchPersistentContext(OFW_PROFILE_DIR, {
+    const context = await webkit.launchPersistentContext(OFW_PROFILE_DIR, {
       headless: false,
-      channel: 'chrome',
-      args: ['--no-first-run', '--no-default-browser-check'],
       acceptDownloads: true,
     });
 
     const page = context.pages()[0] ?? await context.newPage();
 
     try {
-      await page.goto(OFW_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      // Navigate directly to the messages view (works whether or not already logged in)
+      await page.goto(`${OFW_APP_URL}/app/messages`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      console.log(`[OFW] Landed on: ${page.url()}`);
 
+      // Protected routes redirect to /app/login when the session has expired or is new
       if (OFW_LOGIN_PATHS.some(p => page.url().includes(p))) {
         await waitForEnter(
-          '\n[OFW] Login required. Log in and press Enter when on the main dashboard...',
+          '\n[OFW] Login required. Log in and press Enter once you\'re on the messages page...',
         );
+        console.log(`[OFW] After login: ${page.url()}`);
       }
-
-      // Navigate to message board
-      if (!page.url().includes('message-board')) {
-        await page.goto(`${OFW_APP_URL}/message-board`, {
-          waitUntil: 'domcontentloaded',
-          timeout: 15000,
-        }).catch(() => {});
-      }
-
-      // Click "All Messages" folder in sidebar
-      await page
-        .locator('a, button, [role="menuitem"]')
-        .filter({ hasText: /all messages/i })
-        .first()
-        .click({ timeout: 10000 })
-        .catch(() => {});
 
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const download = await this.triggerDownload(page, startDate, endDate);
+      const download = await this.triggerDownload(context, page, startDate, endDate);
 
       const tmpPath = path.join(os.tmpdir(), `ofw-${Date.now()}.pdf`);
       await download.saveAs(tmpPath);
@@ -81,11 +67,15 @@ export class OFWService {
     }
   }
 
-  private async triggerDownload(page: Page, startDate: Date, endDate: Date): Promise<Download> {
-    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+  private async triggerDownload(context: BrowserContext, page: Page, startDate: Date, endDate: Date): Promise<Download> {
+    const fmt = (d: Date) => {
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${mm}/${dd}/${d.getFullYear()}`;
+    };
 
     // Try automated path: find the print/download button OFW shows in the All Messages view
-    const printBtn = page.locator('button, a').filter({ hasText: /print|download/i }).first();
+    const printBtn = page.locator('#downloadBtn');
     const canAutomate = await printBtn.isVisible({ timeout: 5000 }).catch(() => false);
 
     if (canAutomate) {
@@ -93,44 +83,15 @@ export class OFWService {
         page.waitForEvent('download', { timeout: 60000 }),
         (async () => {
           await printBtn.click();
-          // Select "Date Range" option in the dialog if present
-          await page
-            .locator('label, input[type="radio"], button')
-            .filter({ hasText: /date range/i })
-            .first()
-            .click({ timeout: 5000 })
-            .catch(() => {});
-          // Fill start date — try common input selectors
-          for (const sel of [
-            'input[name*="start" i]',
-            'input[placeholder*="start" i]',
-            'input[placeholder*="from" i]',
-            'input[placeholder*="begin" i]',
-          ]) {
-            const el = page.locator(sel).first();
-            if (await el.isVisible({ timeout: 1000 }).catch(() => false)) {
-              await el.fill(fmt(startDate));
-              break;
-            }
-          }
-          // Fill end date
-          for (const sel of [
-            'input[name*="end" i]',
-            'input[placeholder*="end" i]',
-            'input[placeholder*="to" i]',
-          ]) {
-            const el = page.locator(sel).first();
-            if (await el.isVisible({ timeout: 1000 }).catch(() => false)) {
-              await el.fill(fmt(endDate));
-              break;
-            }
-          }
-          // Click the final download/generate button
-          await page
-            .locator('button')
-            .filter({ hasText: /download|generate/i })
-            .last()
-            .click({ timeout: 10000 });
+          await page.locator('#downloadForm').waitFor({ state: 'visible', timeout: 5000 });
+          
+          await page.locator('#messagesSelect').click();
+          await page.locator('[role="option"]').filter({ hasText: 'Within Date Range' }).click();
+          
+          await page.locator('input[name="from"]').fill(fmt(startDate));
+          await page.locator('input[name="to"]').fill(fmt(endDate));
+          
+          await page.locator('#generateBtn').click();
         })(),
       ]);
       return dl;
@@ -139,7 +100,7 @@ export class OFWService {
     // Fallback: guide the user to trigger the download manually
     console.warn('[OFW] Could not locate download button automatically — falling back to manual trigger.');
     const [dl] = await Promise.all([
-      page.waitForEvent('download', { timeout: 120000 }),
+      context.waitForEvent('download', { timeout: 120000 }),
       waitForEnter(
         `\n[OFW] Please manually trigger the message download:\n` +
         `  1. Go to Messages → All Messages\n` +
