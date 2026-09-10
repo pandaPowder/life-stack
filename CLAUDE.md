@@ -35,7 +35,7 @@ competitive soccer", "I withdrew from that role at Acme"), propose the
 edit to the relevant file, make it on approval, then commit and push:
 
 ```bash
-cd /Users/dallas/code/life/.context
+cd /Users/dallas/code/personal/life/.context
 git add . && git commit -m "update: <what changed>" && git push
 ```
 

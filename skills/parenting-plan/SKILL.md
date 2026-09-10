@@ -59,7 +59,7 @@ Propose specific edits to `.context/people/{name}.md`. Quality gate: **"will thi
 On approval, edit the file and commit:
 
 ```bash
-cd /Users/dallas/code/life/.context
+cd /Users/dallas/code/personal/life/.context
 git add people/
 git commit -m "update: <what changed>"
 git push
