@@ -5,6 +5,8 @@ import type { BeeperService, BeeperMessage } from './beeper.service.js';
 import type { SwayService } from './sway.service.js';
 import type { OFWService, OFWMessage } from './ofw.service.js';
 import type { SourceLink } from '../domains/parenting/formatter.js';
+import { formatScheduleContext } from '../domains/parenting/schedule.js';
+import { schedulesConfig } from '../config/schedules.js';
 
 const SCHOOL_NOISE_FILTER = '-subject:"Assignment Graded" -subject:"Grade Changed" -subject:"Submission Posted"';
 
@@ -22,6 +24,7 @@ export interface GatheredContext {
   beeperMessages: BeeperMessage[];
   ofwMessages: OFWMessage[];
   driveContext: string;
+  scheduleContext: string;
   rawText: string;
   sourceMap: Map<string, SourceLink>;
 }
@@ -41,6 +44,7 @@ export class ContextGatherer {
 
     console.log('--- Step 2: Fetching AI Context from Drive ---');
     const driveContext = await this.services.drive.getAIContextFolderContent('AI Context');
+    const scheduleContext = formatScheduleContext(schedulesConfig);
 
     const emails: GmailMessage[] = [];
     if (!opts.skipEmails) {
@@ -118,6 +122,6 @@ export class ContextGatherer {
       console.log('\n--- Step 5: Skipping OFW as requested ---');
     }
 
-    return { emails, beeperMessages, ofwMessages, driveContext, rawText, sourceMap };
+    return { emails, beeperMessages, ofwMessages, driveContext, scheduleContext, rawText, sourceMap };
   }
 }

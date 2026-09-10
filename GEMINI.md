@@ -24,9 +24,13 @@ Automatically ingest school emails, scrape text from linked Microsoft Sway newsl
 
 ### 4. AI Synthesis & Formatting (`src/services/ai.service.ts`, `src/utils/formatter.ts`)
 *   **Model:** `gemini-2.5-flash`.
-*   **Contextual Prompting**: Injects Drive context and WhatsApp logs directly into the synthesis prompt. 
+*   **Contextual Prompting**: Injects Drive context, WhatsApp logs, and the structured schedule context directly into the synthesis prompt.
 *   **Citations**: Generates per-item citations mapping back to Gmail message IDs and Beeper chat IDs.
 *   **PlanFormatter**: Formats the AI-generated JSON into a cited, child-specific Markdown parenting plan.
+
+### 4a. Structured Schedules (`src/config/schedules.ts`, `src/domains/parenting/schedule.ts`)
+*   **Tool:** Locally-edited `schedules.config.json` (gitignored, same pattern as `user.config.json`).
+*   **Rationale:** The Drive "AI Context" docs are freeform and can silently go stale after a grade promotion (e.g. a class getting attributed to the wrong sibling). `formatScheduleContext()` renders each child's current A-Day/B-Day classes and teachers as an authoritative block that `ContextGatherer` adds to `GatheredContext.scheduleContext`, which `AIService.generateParentingPlan` places above the general Drive context and instructs the model to prefer for child↔class attribution. No auto-import from school portals — update the JSON by hand each school year.
 
 ### 5. Task Sync (`src/workflows/sync-tasks.ts`)
 *   **Tool:** `@doist/todoist-api-typescript`.

@@ -28,7 +28,7 @@ export class AIService {
   /**
    * Summarizes the raw school email text, Sway content, and messaging logs.
    */
-  async generateParentingPlan(rawText: string, context: string = ''): Promise<ParentingPlan> {
+  async generateParentingPlan(rawText: string, context: string = '', scheduleContext: string = ''): Promise<ParentingPlan> {
     const prompt = `
       You are an expert parenting assistant. Below is text extracted from school emails, newsletters, and family messaging history.
       Analyze the text and extract all important information for my children's weekly parenting plan.
@@ -39,7 +39,9 @@ export class AIService {
       - DO NOT list requests I made to others as "Homework Support" or "Purchases Needed" for myself.
       - DO focus on requests or info sent TO me by my partner/co-parent (${userConfig.partnerName}) or my kids.
       - Use my own messages ("ME (${userConfig.userName})") only as context to understand agreements or confirmed plans.
-      
+      ${scheduleContext ? `
+      ${scheduleContext}
+      ` : ''}
       PERSONAL CONTEXT (Use this to prioritize and assign tasks):
       ---
       ${context}

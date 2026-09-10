@@ -24,6 +24,9 @@ inputs/
 # Personal config (names, communication style) — copy from user.config.example.json
 user.config.json
 
+# Personal schedule data (kids' classes/teachers) — copy from schedules.config.example.json
+schedules.config.json
+
 # Personal planning artifact — local only
 PLAN.md
 
@@ -32,3 +35,4 @@ skills-lock.json
 
 # Serena language-server index (auto-provisioned per worktree)
 .serena/
+.DS_Store

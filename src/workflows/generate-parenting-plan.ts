@@ -68,7 +68,7 @@ export async function run() {
     }
 
     console.log('\n--- Step 6: Generating Parenting Plan with Unified Context ---');
-    const plan = await ai.generateParentingPlan(ctx.rawText, ctx.driveContext);
+    const plan = await ai.generateParentingPlan(ctx.rawText, ctx.driveContext, ctx.scheduleContext);
 
     const markdown = PlanFormatter.formatMarkdown(plan, ctx.sourceMap);
     await PlanFormatter.writeToFile('data/parenting/weekly-plan.md', markdown);

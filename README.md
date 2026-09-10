@@ -119,6 +119,17 @@ cp user.config.example.json user.config.json
 Fill in your name, partner/co-parent's name, children's names, and communication
 style preferences. This file is gitignored.
 
+Also copy the schedules template and fill in each child's current classes/teachers:
+
+```bash
+cp schedules.config.example.json schedules.config.json
+```
+
+This gives the pipeline an authoritative, code-level source for which child takes
+which class — so course/teacher attribution doesn't silently go stale the way
+freeform "AI Context" notes can after a grade promotion. Also gitignored; update
+it by hand each school year (no importer — just edit the JSON).
+
 ### 6. Personal context repo (optional, for agent mode)
 
 Create a private git repo and clone it to `.context/` in this directory:
