@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 async function setupServices() {
   const auth = new AuthService();
   const sway = new SwayService();
-  const beeper = new BeeperService(process.env.BEEPER_ACCESS_TOKEN);
+  const beeper = new BeeperService(process.env.LIFE_BEEPER_ACCESS_TOKEN);
   const ofw = new OFWService();
   console.log('--- Step 1: Authorizing with Google ---');
   await auth.authorize();
@@ -41,10 +41,10 @@ export async function run() {
     .parse(process.argv);
 
   const options = localProgram.opts();
-  const apiKey = options.key || process.env.GEMINI_API_KEY;
+  const apiKey = options.key || process.env.LIFE_GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.error('Please provide a Gemini API Key via -k or GEMINI_API_KEY environment variable.');
+    console.error('Please provide a Gemini API Key via -k or LIFE_GEMINI_API_KEY environment variable.');
     process.exit(1);
   }
 
@@ -57,7 +57,7 @@ export async function run() {
       query: options.query,
       days: parseInt(options.days),
       skipEmails: options.skipEmails,
-      chatNames: (process.env.BEEPER_CHAT_NAMES || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+      chatNames: (process.env.LIFE_BEEPER_CHAT_NAMES || '').split(',').map((s: string) => s.trim()).filter(Boolean),
       skipOfw: options.skipOfw,
       ofwPdf: options.ofwPdf,
     });

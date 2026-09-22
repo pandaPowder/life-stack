@@ -46,9 +46,9 @@ function parseDaysArg(defaultDays = 30): number {
 async function run() {
   console.log('--- Career Tracking Workflow ---');
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.LIFE_GEMINI_API_KEY;
   if (!apiKey) {
-    console.error('Missing GEMINI_API_KEY');
+    console.error('Missing LIFE_GEMINI_API_KEY');
     process.exit(1);
   }
 

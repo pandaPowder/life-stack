@@ -16,9 +16,9 @@ async function main() {
     process.exit(1);
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.LIFE_GEMINI_API_KEY;
   if (!apiKey) {
-    console.error('GEMINI_API_KEY not set.');
+    console.error('LIFE_GEMINI_API_KEY not set.');
     process.exit(1);
   }
 

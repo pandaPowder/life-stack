@@ -22,8 +22,8 @@ export async function prepInterview(
   company: string,
   opts: PrepInterviewOpts = {},
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY not set.');
+  const apiKey = process.env.LIFE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error('LIFE_GEMINI_API_KEY not set.');
   const ai = new AIService(apiKey);
   return ai.prepInterview(interviewer, company, opts);
 }

@@ -69,6 +69,8 @@ patterns to copy.
 git-ignored. Generated outputs (everything under `data/`) are also
 git-ignored — do not commit them.
 
+**Env var naming — prefix anything generic enough to collide.** Claude Code injects a project's `.env` into every subprocess it spawns, including plugins/MCP connectors that read ambiently-named vars from their own config. A sibling project (`open-brain`) got bitten by this directly: its `.env` had a bare `TELEGRAM_BOT_TOKEN`, which the Telegram channel plugin silently read and hijacked because that's the exact name the plugin's own config expects (see `open-brain/CLAUDE.md`'s "Environment / secrets" section for the full incident writeup). This repo's vars were renamed the same way on 2026-09-22 for the same reason: `GEMINI_API_KEY` → `LIFE_GEMINI_API_KEY` (matches Google's own `gemini` CLI's standard var name), `BEEPER_ACCESS_TOKEN`/`BEEPER_CHAT_NAMES` → `LIFE_BEEPER_*` (matches the shape a Beeper MCP connector could plausibly read), `TODOIST_API_TOKEN` → `LIFE_TODOIST_API_TOKEN` (matches the shape a Todoist MCP connector could plausibly read). Rule going forward: only prefix vars that are actually generic/vendor-standard enough to plausibly collide — not every var (`PARENTING_PLAN_GMAIL_QUERY`, `USER_NAME`, etc. stayed as-is; they're not secrets and nothing else would read them ambiently). Known collision-prone ambient names to check new vars against: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_STATE_DIR`, `TELEGRAM_ACCESS_MODE`, `CLAUDE_CONFIG_DIR`, plus any vendor-CLI-standard name (e.g. `GEMINI_API_KEY`) or MCP-connector-shaped name for a service you also use through an MCP tool.
+
 ## Working style
 
 - **Prefer outcomes over effort.** When a task can be split into "make the
