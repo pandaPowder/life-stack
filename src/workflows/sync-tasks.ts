@@ -9,9 +9,9 @@ import { formatTasks } from '../domains/tasks/formatter.js';
 const OUTPUT_FILE = path.join(process.cwd(), 'data', 'tasks', 'today.md');
 
 export async function run(): Promise<void> {
-  const token = process.env.TODOIST_API_TOKEN;
+  const token = process.env.LIFE_TODOIST_API_TOKEN;
   if (!token) {
-    console.warn('[sync-tasks] TODOIST_API_TOKEN not set — skipping.');
+    console.warn('[sync-tasks] LIFE_TODOIST_API_TOKEN not set — skipping.');
     return;
   }
 
