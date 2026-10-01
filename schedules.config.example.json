@@ -1,0 +1,22 @@
+{
+  "children": [
+    {
+      "name": "Child1",
+      "school": "Example Elementary",
+      "grade": "5",
+      "classes": [
+        { "day": "A", "period": 1, "subject": "Spanish", "teacher": "Ms. Example" }
+      ]
+    },
+    {
+      "name": "Child2",
+      "school": "Example Junior High",
+      "grade": "9",
+      "classes": [
+        { "day": "A", "period": 1, "subject": "Choir", "teacher": "Ms. Example" },
+        { "day": "A", "period": 2, "subject": "AP Human Geography", "teacher": "Mr. Example" },
+        { "day": "B", "period": 5, "subject": "Secondary Math 1", "teacher": "Ms. Example" }
+      ]
+    }
+  ]
+}

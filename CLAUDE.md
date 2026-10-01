@@ -35,7 +35,7 @@ competitive soccer", "I withdrew from that role at Acme"), propose the
 edit to the relevant file, make it on approval, then commit and push:
 
 ```bash
-cd /Users/dallas/code/life/.context
+cd /Users/dallas/code/personal/life/.context
 git add . && git commit -m "update: <what changed>" && git push
 ```
 
@@ -51,6 +51,37 @@ the same reason. Keep all four working when adding new files.
 `.context/` is git-ignored from the public repo and lives in its own
 private git repo (`pandaPowder/life-context`) — clone it separately on a
 new machine.
+
+**Open Brain (MCP) — a separate memory store, not a replacement for `.context`.**
+If an `open-brain` MCP server is connected, it's cross-tool persistent memory
+(semantic search over "thoughts") shared with every AI the owner uses —
+Claude Desktop, ChatGPT, Cursor, etc. — not specific to this repo.
+
+**Do not assume Open Brain is only for ephemeral/raw notes.** Its
+`capture_thought` tool is explicitly used for durable facts too — decisions,
+person notes, relationship changes, preferences. `.context/` and Open Brain
+often hold durable facts about the *same* people; they differ in audience
+and mechanism, not durability:
+
+- `.context/` — curated, version-controlled markdown read deterministically
+  into this pipeline's prompts (morning briefing, parenting plan, interview
+  prep). Keep it small and current — every line costs prompt budget on
+  every run.
+- Open Brain — semantic-search memory for *all* the owner's AI tools, not
+  just this pipeline. Retrieved by meaning via `search_thoughts` /
+  `list_thoughts`, not read in full each session.
+
+When durable context surfaces in a session:
+1. Update `.context/` as usual if it should shape this pipeline's output.
+2. Also consider `capture_thought` into Open Brain if the fact should be
+   available to the owner's other AI tools (relationship changes, decisions,
+   person notes) — this is an "also", not an "instead of".
+3. Before capturing, run `search_thoughts` / `list_thoughts` first so you
+   don't create duplicate entries for something already captured there.
+4. When asked to reconcile `.context` with Open Brain, search Open Brain for
+   durable facts about the relevant people/topics that are missing from
+   `.context` and promote them — but don't re-capture into Open Brain
+   anything that already originated there.
 
 **Respect the existing pipeline.** `generate-parenting-plan.ts` works and runs
 weekly. Do not refactor it as part of unrelated work. If a change in the new

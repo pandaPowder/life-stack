@@ -19,6 +19,7 @@ const EMPTY_CTX = {
   beeperMessages: [],
   ofwMessages: [],
   driveContext: '',
+  scheduleContext: '',
   rawText: '',
   sourceMap: new Map(),
 };

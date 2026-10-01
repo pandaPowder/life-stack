@@ -40,6 +40,7 @@ describe('ContextGatherer', () => {
     expect(ctx.emails).toHaveLength(0);
     expect(ctx.beeperMessages).toHaveLength(0);
     expect(ctx.driveContext).toBe('');
+    expect(typeof ctx.scheduleContext).toBe('string');
     expect(ctx.rawText).toBe('');
     expect(ctx.sourceMap).toBeInstanceOf(Map);
     expect(ctx.sourceMap.size).toBe(0);

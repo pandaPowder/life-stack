@@ -57,7 +57,7 @@ At the end, propose any updates to `.context/career-context.md`:
 
 On approval, edit and commit:
 ```bash
-cd /Users/dallas/code/life/.context
+cd /Users/dallas/code/personal/life/.context
 git add career-context.md
 git commit -m "update: <what changed>"
 git push
